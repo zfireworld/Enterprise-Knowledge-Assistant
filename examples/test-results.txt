@@ -1,0 +1,17 @@
+test_changed_document_is_used (test.test_knowledge.KnowledgeTests.test_changed_document_is_used)
+�滻ԭ�ĺ󣬴𰸺�����Ӧ��֮�仯�� ... ok
+test_conflict (test.test_knowledge.KnowledgeTests.test_conflict)
+��ͻӦ����˫����������塣 ... ok
+test_missing_and_history (test.test_knowledge.KnowledgeTests.test_missing_and_history)
+��������������ʷ׷�ʷ��ز�ͬ״̬�� ... ok
+test_normal_and_rewrite (test.test_knowledge.KnowledgeTests.test_normal_and_rewrite)
+��������Ӧ����ͬһ�ĵ���ԭ�ġ� ... ok
+test_rejects_unread_citation (test.test_knowledge.KnowledgeTests.test_rejects_unread_citation)
+û�ж�ȡԭ��ʱ�����ܽ���ģ���鹹�����á� ... ok
+test_tool_failure_and_limit (test.test_knowledge.KnowledgeTests.test_tool_failure_and_limit)
+֪ʶ����Ϻ͵������޾�Ӧ����δ��ɡ� ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.011s
+
+OK

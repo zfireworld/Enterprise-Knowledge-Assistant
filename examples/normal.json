@@ -1,0 +1,53 @@
+{
+  "input": {
+    "question": "账号密码如何重置？",
+    "data": "data\\knowledge.json"
+  },
+  "output": {
+    "status": "completed",
+    "answer": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+    "citations": [
+      {
+        "doc_id": "D03",
+        "chunk_id": "D03-1",
+        "quote": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+        "version_date": "2025-03-01"
+      }
+    ],
+    "missing_information": "",
+    "trace": [
+      {
+        "action": "search_documents",
+        "reason": "查找相关资料",
+        "arguments": {
+          "query": "账号密码如何重置？"
+        },
+        "result": [
+          {
+            "doc_id": "D03",
+            "version_date": "2025-03-01",
+            "chunk_id": "D03-1",
+            "title": "账号登录 FAQ",
+            "text": "员工忘记登录密码时，应通过内部账号平台重置密码。"
+          }
+        ]
+      },
+      {
+        "action": "read_passage",
+        "reason": "核对候选原文",
+        "arguments": {
+          "doc_id": "D03",
+          "chunk_id": "D03-1"
+        },
+        "result": {
+          "doc_id": "D03",
+          "version_date": "2025-03-01",
+          "chunk_id": "D03-1",
+          "title": "账号登录 FAQ",
+          "text": "员工忘记登录密码时，应通过内部账号平台重置密码。"
+        }
+      }
+    ],
+    "decision_reason": "已有原文依据"
+  }
+}

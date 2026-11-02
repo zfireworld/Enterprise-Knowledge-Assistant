@@ -1,0 +1,23 @@
+{
+  "input": {
+    "question": "公司停车位收费吗？",
+    "data": "data\\knowledge.json"
+  },
+  "output": {
+    "status": "insufficient",
+    "answer": "未找到相关资料。",
+    "citations": [],
+    "missing_information": "相关制度",
+    "trace": [
+      {
+        "action": "search_documents",
+        "reason": "查找相关资料",
+        "arguments": {
+          "query": "公司停车位收费吗？"
+        },
+        "result": []
+      }
+    ],
+    "decision_reason": "检索无结果"
+  }
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>知序 · 企业知识工作台</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/layout.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">✳</span><span><strong>知序</strong><small>KNOWLEDGE SPACE</small></span></div>
+    <div class="workspace"><span class="workspace-icon">▦</span><span><strong>企业知识空间</strong><small>工作区</small></span><span class="chevron">⌄</span></div>
+    <div class="nav-label">工作台</div>
+    <nav><button class="nav-item active" data-view="chat"><span>◈</span>知识问答</button><button class="nav-item" data-view="documents"><span>▤</span>知识资料<span class="nav-count" id="nav-count">—</span></button></nav>
+    <div class="sidebar-bottom"><span class="status-dot"></span>知识工作台 <span class="sidebar-version">V 1.0</span></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="breadcrumb">工作区 <span>/</span> <strong id="breadcrumb">知识问答</strong></div><div class="top-actions"><span class="connection"><i></i>服务已连接</span><button class="avatar" aria-label="当前工作区">企</button></div></header>
+    <section class="view chat-view" id="chat-view">
+      <div class="chat-layout"><div class="chat-column">
+        <div class="page-heading"><div><div class="eyebrow"><span class="spark">✳</span> YOUR KNOWLEDGE ASSISTANT</div><h1>把问题交给知识。</h1><p>从已有资料中寻找有据可查的答案。</p></div><button class="quiet-button" id="new-chat">＋ 新对话</button></div>
+        <div class="conversation" id="conversation" aria-live="polite">
+          <div class="welcome" id="welcome"><div class="welcome-icon">✳</div><h2>有什么可以帮你？</h2><p>我会检索知识资料，并附上回答依据。<br>试着从下面的问题开始，或直接输入你的问题。</p>
+            <div class="suggestions"><button data-prompt="报销期限多久？"><span>◷</span><strong>报销期限多久？</strong><small>了解费用报销规定</small><b>↗</b></button><button data-prompt="年假有几天？"><span>▦</span><strong>年假有几天？</strong><small>查询假期相关制度</small><b>↗</b></button><button data-prompt="账号密码如何重置？"><span>⌘</span><strong>账号密码如何重置？</strong><small>查找常见问题解答</small><b>↗</b></button></div>
+          </div>
+        </div>
+        <form class="composer" id="chat-form"><textarea id="question" rows="1" placeholder="输入你的问题，例如：报销需要在多久内提交？" aria-label="输入问题" required></textarea><div class="composer-bottom"><div class="composer-options"><label for="model-select">✦</label><select id="model-select" aria-label="回答模式"><option value="real">智能回答</option><option value="mock">规则演示</option></select><span>基于向量检索回答</span></div><button class="send-button" type="submit" aria-label="发送问题">↑</button></div></form>
+        <p class="composer-note">回答由 AI 生成，请结合引用资料核实重要信息。</p>
+      </div><aside class="context-panel"><div class="panel-head"><div><div class="eyebrow">KNOWLEDGE BASE</div><h3>知识资料</h3></div><span class="panel-icon">▤</span></div><p>回答基于工作区内的资料，并提供原文引用。</p><div class="stat-card"><span>当前知识库</span><strong id="doc-count">— <small>份资料</small></strong><div><i></i> 可用于检索</div></div><div class="panel-section"><div class="section-title">最近资料 <button class="text-button" data-view="documents">查看全部 ↗</button></div><div id="recent-docs" class="recent-list"></div></div><div class="tip"><span>✧</span><div><strong>让答案更准确</strong><p>导入最新制度或常见问题，帮助助手找到更相关的依据。</p><button class="text-button" id="open-import-side">导入资料 →</button></div></div></aside></div>
+    </section>
+    <section class="view documents-view hidden" id="documents-view"><div class="docs-heading"><div><div class="eyebrow">YOUR KNOWLEDGE BASE</div><h1>知识资料</h1><p>管理工作区的资料，让每个回答都有据可依。</p></div><button class="primary-button" id="open-import">＋ 导入资料</button></div><div class="docs-summary"><div class="summary-icon">▤</div><div><strong id="summary-count">— 份资料</strong><small>已纳入当前知识库</small></div><span>● &nbsp;知识库可用</span></div><div class="docs-card"><div class="docs-card-header"><div><h3>全部资料</h3><p>导入后即可用于知识问答</p></div><span id="list-count">—</span></div><div class="table-wrap"><table><thead><tr><th>资料名称</th><th>文档 ID</th><th>版本日期</th><th>片段</th><th>状态</th></tr></thead><tbody id="documents-body"></tbody></table></div><div class="empty-docs hidden" id="empty-docs">还没有资料，导入第一份文档开始使用。</div></div><div class="docs-footnote">✧ &nbsp;支持 PDF、Markdown 和 UTF-8 文本文件，导入时可指定版本日期。</div></section>
+  </main>
+</div>
+<dialog id="import-dialog"><form id="import-form"><div class="modal-header"><div><div class="eyebrow">ADD TO KNOWLEDGE BASE</div><h2>导入知识资料</h2><p>添加文件后，助手就可以根据其中的内容回答。</p></div><button type="button" class="close-button" id="close-import" aria-label="关闭">×</button></div><label class="dropzone" id="dropzone"><input id="file-input" type="file" accept=".pdf,.md,.txt" required><span class="upload-icon">↑</span><strong id="file-label">点击选择或拖拽文件到这里</strong><small>PDF、Markdown、TXT · 单个文件不超过 10 MB</small></label><label class="field-label" for="version-date">版本日期 <span>用于区分资料版本</span></label><input id="version-date" class="date-input" type="date" required><p class="import-feedback" id="import-feedback" role="status"></p><div class="modal-actions"><button type="button" class="quiet-button" id="cancel-import">取消</button><button type="submit" class="primary-button" id="submit-import">开始导入 <span>→</span></button></div></form></dialog>
+<script src="/static/app.js" defer></script>
+</body></html>

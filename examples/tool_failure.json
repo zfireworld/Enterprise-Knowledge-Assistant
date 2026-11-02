@@ -1,0 +1,22 @@
+{
+  "input": {
+    "question": "报销期限多久？",
+    "data": "data\\nonexistent.json"
+  },
+  "output": {
+    "status": "incomplete",
+    "answer": "工具失败，无法确认回答完整",
+    "citations": [],
+    "missing_information": "工具失败，无法确认回答完整",
+    "trace": [
+      {
+        "action": "search_documents",
+        "reason": "查找相关资料",
+        "arguments": {
+          "query": "报销期限多久？"
+        },
+        "error": "[Errno 2] No such file or directory: 'D:\\\\ai\\\\workspace\\\\PythonProject16\\\\data\\\\nonexistent.json'"
+      }
+    ]
+  }
+}
