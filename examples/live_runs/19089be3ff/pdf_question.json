@@ -1,0 +1,69 @@
+{
+  "input": {
+    "question": "How often should the equipment be inspected?",
+    "model": "real",
+    "history": []
+  },
+  "http_status": 200,
+  "output": {
+    "status": "completed",
+    "answer": "The equipment should be inspected every 17 days.",
+    "citations": [
+      {
+        "doc_id": "DOC-D2486F96",
+        "chunk_id": "470223410697029206",
+        "quote": "Inspect the equipment every 17 days.",
+        "version_date": "2025-01-01",
+        "version_id": "728b1cc6e2804b43a26364b44dd33657",
+        "page_number": 2,
+        "source_url": "/api/documents/DOC-D2486F96/versions/728b1cc6e2804b43a26364b44dd33657/file#page=2"
+      }
+    ],
+    "missing_information": "",
+    "trace": [
+      {
+        "action": "search_documents",
+        "reason": "Need to find documents specifying the required frequency or schedule for equipment inspections.",
+        "arguments": {
+          "query": "equipment inspection frequency how often inspected"
+        },
+        "result": [
+          {
+            "doc_id": "DOC-D2486F96",
+            "version_date": "2025-01-01",
+            "chunk_id": "470223410697029206",
+            "title": "inspection",
+            "text": "Synthetic inspection rule\n\nInspect the equipment every 17 days.",
+            "version_id": "728b1cc6e2804b43a26364b44dd33657",
+            "page_number": 2,
+            "source_url": ""
+          }
+        ]
+      },
+      {
+        "action": "read_passage",
+        "reason": "Need to verify the exact text about equipment inspection frequency before citing it.",
+        "arguments": {
+          "doc_id": "DOC-D2486F96",
+          "chunk_id": "470223410697029206"
+        },
+        "result": {
+          "doc_id": "DOC-D2486F96",
+          "version_date": "2025-01-01",
+          "chunk_id": "470223410697029206",
+          "title": "inspection",
+          "text": "Synthetic inspection rule\n\nInspect the equipment every 17 days.",
+          "version_id": "728b1cc6e2804b43a26364b44dd33657",
+          "page_number": 2,
+          "source_url": "/api/documents/DOC-D2486F96/versions/728b1cc6e2804b43a26364b44dd33657/file#page=2"
+        }
+      }
+    ],
+    "decision_reason": "The verified passage explicitly states the required inspection frequency.",
+    "query_rewrite": {
+      "original": "How often should the equipment be inspected?",
+      "rewritten": "How often should the equipment be inspected?",
+      "status": "skipped"
+    }
+  }
+}

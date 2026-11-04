@@ -1,0 +1,23 @@
+{
+  "id": "d2486f96f0544e5488b160d2d3e30c4a",
+  "filename": "inspection.pdf",
+  "status": "completed",
+  "doc_id": "DOC-D2486F96",
+  "title": "inspection",
+  "version_id": "728b1cc6e2804b43a26364b44dd33657",
+  "version_number": 1,
+  "version": {
+    "version_id": "728b1cc6e2804b43a26364b44dd33657",
+    "number": 1,
+    "version_date": "2025-01-01",
+    "status": "processing",
+    "chunks": 0,
+    "expected_current": null,
+    "source": {
+      "storage_key": "d2486f96f0544e5488b160d2d3e30c4a/inspection.pdf",
+      "filename": "inspection.pdf"
+    }
+  },
+  "step": "版本已发布",
+  "chunks": 2
+}

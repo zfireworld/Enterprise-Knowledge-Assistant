@@ -57,6 +57,11 @@ function showMessage(role, content, result) {
     const source = el('div', 'citation', '');
     source.append(el('strong', '', `▤  ${citation.doc_id} · ${citation.version_date}`));
     source.append(el('span', '', `“${citation.quote}”`));
+    if (citation.source_url && citation.source_url.startsWith('/api/documents/')) {
+      const link = el('a', 'source-link', citation.page_number ? `查看原文 · 第 ${citation.page_number} 页 ↗` : '查看原文件 ↗');
+      link.href = citation.source_url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      source.append(link);
+    }
     bubble.append(source);
   }
   if (result?.missing_information) bubble.append(el('div', 'citation', `待补充：${result.missing_information}`));

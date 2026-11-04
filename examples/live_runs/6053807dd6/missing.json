@@ -1,0 +1,125 @@
+{
+  "mode": "real_model_real_milvus",
+  "collection": "kb_eval_6053807dd6",
+  "input": {
+    "question": "公司停车位收费吗？",
+    "history": [],
+    "model": "real"
+  },
+  "elapsed_seconds": 18.7,
+  "result": {
+    "http_status": 200,
+    "body": {
+      "status": "insufficient",
+      "answer": "抱歉，在现有的公司知识库中未找到关于停车位是否收费的相关规定或通知。建议您联系行政管理部门或物业管理处进行咨询。",
+      "citations": [],
+      "missing_information": "缺少公司停车位管理及收费相关的制度文件或通知。",
+      "trace": [
+        {
+          "action": "search_documents",
+          "reason": "需要检索公司关于停车位是否收费的相关制度或通知",
+          "arguments": {
+            "query": "停车位 收费"
+          },
+          "result": [
+            {
+              "doc_id": "DOC-CDD89208",
+              "version_date": "2025-02-01",
+              "chunk_id": "470223410697029197",
+              "title": "02-费用报销说明",
+              "text": "员工应在费用发生后15天内提交报销申请。",
+              "version_id": "e92d6abc2cd04a0090d9f5af24398ae7",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-0F8DE878",
+              "version_date": "2025-01-01",
+              "chunk_id": "470223410697029195",
+              "title": "01-费用报销制度",
+              "text": "员工应在费用发生后30天内提交报销申请。",
+              "version_id": "b1dafe2e71ff43a9a53a56ffcec09611",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-1571369C",
+              "version_date": "2025-01-01",
+              "chunk_id": "470223410697029201",
+              "title": "04-年假制度",
+              "text": "符合条件的员工每年可享受5天年假。",
+              "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-09532FDB",
+              "version_date": "2025-03-01",
+              "chunk_id": "470223410697029199",
+              "title": "03-账号登录FAQ",
+              "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+              "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+              "page_number": null,
+              "source_url": ""
+            }
+          ]
+        },
+        {
+          "action": "search_documents",
+          "reason": "首次检索未找到停车位收费相关内容，尝试更换关键词扩大检索范围",
+          "arguments": {
+            "query": "停车 车位 停车场"
+          },
+          "result": [
+            {
+              "doc_id": "DOC-09532FDB",
+              "version_date": "2025-03-01",
+              "chunk_id": "470223410697029199",
+              "title": "03-账号登录FAQ",
+              "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+              "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-0F8DE878",
+              "version_date": "2025-01-01",
+              "chunk_id": "470223410697029195",
+              "title": "01-费用报销制度",
+              "text": "员工应在费用发生后30天内提交报销申请。",
+              "version_id": "b1dafe2e71ff43a9a53a56ffcec09611",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-CDD89208",
+              "version_date": "2025-02-01",
+              "chunk_id": "470223410697029197",
+              "title": "02-费用报销说明",
+              "text": "员工应在费用发生后15天内提交报销申请。",
+              "version_id": "e92d6abc2cd04a0090d9f5af24398ae7",
+              "page_number": null,
+              "source_url": ""
+            },
+            {
+              "doc_id": "DOC-1571369C",
+              "version_date": "2025-01-01",
+              "chunk_id": "470223410697029201",
+              "title": "04-年假制度",
+              "text": "符合条件的员工每年可享受5天年假。",
+              "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+              "page_number": null,
+              "source_url": ""
+            }
+          ]
+        }
+      ],
+      "decision_reason": "经过两次不同关键词的检索（'停车位 收费'和'停车 车位 停车场'），返回的结果均为费用报销、年假制度、账号登录等无关内容，知识库中没有包含停车位收费的相关信息。",
+      "query_rewrite": {
+        "original": "公司停车位收费吗？",
+        "rewritten": "公司停车位收费吗？",
+        "status": "skipped"
+      }
+    }
+  }
+}

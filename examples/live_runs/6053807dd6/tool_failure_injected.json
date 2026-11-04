@@ -1,0 +1,34 @@
+{
+  "mode": "real_model_real_milvus",
+  "collection": "kb_eval_6053807dd6",
+  "input": {
+    "question": "报销期限多久？",
+    "history": [],
+    "model": "real"
+  },
+  "elapsed_seconds": 4.41,
+  "result": {
+    "http_status": 200,
+    "body": {
+      "status": "incomplete",
+      "answer": "工具失败，无法确认回答完整",
+      "citations": [],
+      "missing_information": "工具失败，无法确认回答完整",
+      "trace": [
+        {
+          "action": "search_documents",
+          "reason": "用户询问报销期限，需检索相关财务或报销制度文档以获取准确信息。",
+          "arguments": {
+            "query": "报销期限"
+          },
+          "error": "验收测试：模拟 Milvus 检索失败"
+        }
+      ],
+      "query_rewrite": {
+        "original": "报销期限多久？",
+        "rewritten": "报销期限多久？",
+        "status": "skipped"
+      }
+    }
+  }
+}

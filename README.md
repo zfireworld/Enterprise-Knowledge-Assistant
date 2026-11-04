@@ -40,6 +40,8 @@ uv run python -m examples.generate_examples
 
 网页导入时按最多 800 个字符切分，目标重叠 120 个字符，优先在段落、换行和句末切分；为了保留自然边界，实际重叠可能小于 120。该参数为初始配置，尚需通过检索评估集验证。既有 Milvus 数据不会自动重新切分；可通过更新版本重新导入。
 
+新导入的 PDF 使用 MinerU `content_list.json` 按物理页切分，并为每个版本登记原文件；引用经过读取及校验后可点击“查看原文”跳至对应 PDF 页。页码是 PDF 页序号，可能与印刷页码不同；浏览器需要支持 PDF `#page` 跳转。解析内容列表缺失或页码不可靠时，系统保留原始 Markdown 流程且不猜测页码。旧片段不自动回填位置；可通过更新版本重新导入。原文件存储在 `output/web_imports/`，删除后链接将不可用；服务当前未实现用户认证，勿在不可信网络直接开放文件接口。
+
 默认使用本地合成资料和确定性 Mock，适合离线检查流程。Mock 不是模型决策效果证明。资料可直接修改 `data/knowledge.json`，下一次请求即生效。
 
 真实模型模式复用现有 `app/lm/lm_utils.py`：在根目录 `.env` 中设置 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`LLM_DEFAULT_MODEL`、`LLM_DEFAULT_TEMPERATURE`，然后运行：
@@ -59,11 +61,11 @@ uv run python -m app.knowledge.index_cli <新集合名>
 uv run python -m app.knowledge.cli "报销期限多久？" --model real --repository milvus
 ```
 
-该命令拒绝覆盖已有集合；网页导入的更新流程见上文。已有商品集合中的片段如缺少 `doc_id` 和 `version_date`，需要补齐这些字段；不能将 `chunk_id` 当作文档 ID。真实 MongoDB 和 Milvus 的版本切换使用合成向量做过隔离验证，完整本地模型与 PDF 导入链路仍需在实际环境中验证。
+该命令拒绝覆盖已有集合；网页导入的更新流程见上文。已有商品集合中的片段如缺少 `doc_id` 和 `version_date`，需要补齐这些字段；不能将 `chunk_id` 当作文档 ID。已使用真实 MongoDB、Milvus、本地 MinerU 和模型在隔离集合中验证合成 PDF 导入与引用链接；浏览器 PDF 阅读器跳页仍需手动验证。
 
 ## 评审入口
 
-代码：`app/knowledge/`（领域接口、仓库适配、工具、模型、服务、CLI）；测试：`test/test_knowledge*.py`；样例：`examples/*.json`；验收点与复现方法见 `docs/03-evaluation.md`。`real_normal.json` 和 `real_conflict.json` 是历史真实模型对本地资料的运行记录；其余离线样例使用 Mock，不能证明真实模型或 Milvus 的效果。Trace 记录工具参数、结果及简短决策依据，不记录模型内部思维过程。
+代码：`app/knowledge/`（领域接口、仓库适配、工具、模型、服务、CLI）；测试：`test/test_knowledge*.py`；样例：`examples/*.json` 和 `examples/live_runs/`；验收点与复现方法见 `docs/03-evaluation.md`。`real_normal.json` 和 `real_conflict.json` 是历史真实模型对本地资料的运行记录；`examples/live_runs/6053807dd6/` 是真实模型及独立 Milvus 集合的验收记录，其中工具失败是故障注入；`examples/live_runs/19089be3ff/` 是合成 PDF 真实解析与引用来源记录。离线样例使用 Mock，不能证明真实模型或 Milvus 的效果。Trace 记录工具参数、结果及简短决策依据，不记录模型内部思维过程。
 
 网页导入测试资料、逐项手动操作及查看 Trace 的方法见 [手工测试指南](docs/06-manual-testing.md)。
 

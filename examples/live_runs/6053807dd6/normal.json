@@ -1,0 +1,74 @@
+{
+  "mode": "real_model_real_milvus",
+  "collection": "kb_eval_6053807dd6",
+  "input": {
+    "question": "忘记登录密码怎么办？",
+    "history": [],
+    "model": "real"
+  },
+  "elapsed_seconds": 19.41,
+  "result": {
+    "http_status": 200,
+    "body": {
+      "status": "completed",
+      "answer": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+      "citations": [
+        {
+          "doc_id": "DOC-09532FDB",
+          "chunk_id": "470223410697029199",
+          "quote": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+          "version_date": "2025-03-01",
+          "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+          "page_number": null,
+          "source_url": "/api/documents/DOC-09532FDB/versions/a4b18d76f1134b1aa8a1f2eba014ea89/file"
+        }
+      ],
+      "missing_information": "",
+      "trace": [
+        {
+          "action": "search_documents",
+          "reason": "用户询问忘记登录密码的处理方式，需要检索企业知识库中关于密码找回或重置的相关制度与操作指引。",
+          "arguments": {
+            "query": "忘记登录密码 重置密码 找回密码"
+          },
+          "result": [
+            {
+              "doc_id": "DOC-09532FDB",
+              "version_date": "2025-03-01",
+              "chunk_id": "470223410697029199",
+              "title": "03-账号登录FAQ",
+              "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+              "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+              "page_number": null,
+              "source_url": ""
+            }
+          ]
+        },
+        {
+          "action": "read_passage",
+          "reason": "需要核对搜索结果中关于忘记登录密码处理方式的原文内容，以便准确引用并回答用户问题。",
+          "arguments": {
+            "doc_id": "DOC-09532FDB",
+            "chunk_id": "470223410697029199"
+          },
+          "result": {
+            "doc_id": "DOC-09532FDB",
+            "version_date": "2025-03-01",
+            "chunk_id": "470223410697029199",
+            "title": "03-账号登录FAQ",
+            "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+            "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+            "page_number": null,
+            "source_url": "/api/documents/DOC-09532FDB/versions/a4b18d76f1134b1aa8a1f2eba014ea89/file"
+          }
+        }
+      ],
+      "decision_reason": "已检索并读取相关文档原文，确认了忘记登录密码的处理方式，可直接引用回答用户问题。",
+      "query_rewrite": {
+        "original": "忘记登录密码怎么办？",
+        "rewritten": "忘记登录密码怎么办？",
+        "status": "skipped"
+      }
+    }
+  }
+}

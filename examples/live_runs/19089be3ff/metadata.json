@@ -1,0 +1,7 @@
+{
+  "run_id": "19089be3ff",
+  "collection": "kb_pdf_eval_19089be3ff",
+  "model": "qwen3.8-max-0902",
+  "started_utc": "2026-11-04T09:13:36.381813+00:00",
+  "input": "合成两页 PDF：第二页规定每 17 天检查设备"
+}

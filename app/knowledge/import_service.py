@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from app.knowledge.chunking import split_text
 from app.knowledge.domain import Passage
+from app.core.logger import logger
 from app.utils.task_events import task_events
 
 if TYPE_CHECKING:
@@ -32,7 +33,8 @@ class ImportService:
         folder.mkdir(parents=True, exist_ok=True)
         (folder / name).write_bytes(content)
         store, target, title = self._prepare_document(doc_id, task_id, name)
-        revision = store.reserve(target, title, version, new_document=doc_id is None)
+        source = {"storage_key": f"{task_id}/{name}", "filename": name}
+        revision = store.reserve(target, title, version, new_document=doc_id is None, source=source)
         task = {"id": task_id, "filename": name, "status": "pending", "doc_id": target,
                                "title": title, "version_id": revision["version_id"], "version_number": revision["number"],
                                "version": revision}
@@ -83,7 +85,8 @@ class ImportService:
         try:
             path = self.work_dir / task_id / task["filename"]
             text = self._read_text(path, task_id)
-            passages = self._split(task["title"], text, version, task_id, task["doc_id"], task["version_id"])
+            passages = self._split_document(path, task["title"], text, version, task_id,
+                                            task["doc_id"], task["version_id"])
             self._update_task(task_id, step="正在生成向量并写入知识库", chunks=len(passages))
             self._save(passages)
             self._store().publish(task["doc_id"], task["version"], len(passages))
@@ -113,6 +116,23 @@ class ImportService:
         doc_id = doc_id or f"DOC-{task_id[:8].upper()}"
         return [Passage(doc_id, version, f"{doc_id}-{index}", title, chunk, version_id)
                 for index, chunk in enumerate(split_text(text), start=1)]
+
+    def _split_document(self, path: Path, title: str, text: str, version: str, task_id: str,
+                        doc_id: str, version_id: str) -> list[Passage]:
+        """PDF 按解析页码切分；页码文件缺失或无效时保留无页码的原有流程。"""
+        if path.suffix.lower() != ".pdf":
+            return self._split(title, text, version, task_id, doc_id, version_id)
+        from app.knowledge.pdf_chunks import split_pdf_pages
+        content_list = path.parent / path.stem / "auto" / f"{path.stem}_content_list.json"
+        try:
+            pages = split_pdf_pages(content_list)
+            if pages:
+                return [Passage(doc_id, version, f"{doc_id}-{index}", title, chunk, version_id, page)
+                        for index, (page, chunk) in enumerate(pages, start=1)]
+        except (OSError, ValueError, TypeError) as exc:
+            # 未能可靠确定页码时不猜测位置，但保留诊断信息。
+            logger.warning(f"PDF 页码提取失败，改用无页码文本：{type(exc).__name__}: {exc}")
+        return self._split(title, text, version, task_id, doc_id, version_id)
 
     def _save(self, passages: list[Passage]) -> None:
         """生成向量并写入 Milvus，失败时抛出异常。"""

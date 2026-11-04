@@ -51,7 +51,8 @@ class VersionRepository:
             "namespace": self.namespace, "doc_id": doc_id, "title": document["title"],
             "current_version": "legacy", "version_counter": 1, "versions": [legacy]}}, upsert=True)
 
-    def reserve(self, doc_id: str, title: str, version_date: str, new_document: bool) -> dict[str, Any]:
+    def reserve(self, doc_id: str, title: str, version_date: str, new_document: bool,
+                source: dict[str, str] | None = None) -> dict[str, Any]:
         """为新建或更新预留独立版本；竞争更新时重试，失败抛出异常。"""
         if new_document:
             self.collection.insert_one({"_id": self._key(doc_id), "namespace": self.namespace,
@@ -64,6 +65,8 @@ class VersionRepository:
             number = document["version_counter"] + 1
             entry = {"version_id": uuid.uuid4().hex, "number": number, "version_date": version_date,
                      "status": "processing", "chunks": 0, "expected_current": document["current_version"]}
+            if source is not None:
+                entry["source"] = source
             updated = self.collection.find_one_and_update(
                 {"_id": self._key(doc_id), "version_counter": number - 1,
                  "current_version": document["current_version"]},

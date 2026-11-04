@@ -14,14 +14,18 @@
         "chunk_id": "D01-1",
         "quote": "员工应在费用发生后30天内提交报销申请。",
         "version_date": "2025-01-01",
-        "version_id": ""
+        "version_id": "",
+        "page_number": null,
+        "source_url": ""
       },
       {
         "doc_id": "D02",
         "chunk_id": "D02-1",
         "quote": "员工应在费用发生后15天内提交报销申请。",
         "version_date": "2025-02-01",
-        "version_id": ""
+        "version_id": "",
+        "page_number": null,
+        "source_url": ""
       }
     ],
     "missing_information": "适用范围或优先级",
@@ -39,7 +43,9 @@
             "chunk_id": "D01-1",
             "title": "费用报销制度",
             "text": "员工应在费用发生后30天内提交报销申请。",
-            "version_id": ""
+            "version_id": "",
+            "page_number": null,
+            "source_url": ""
           },
           {
             "doc_id": "D02",
@@ -47,7 +53,9 @@
             "chunk_id": "D02-1",
             "title": "费用报销说明",
             "text": "员工应在费用发生后15天内提交报销申请。",
-            "version_id": ""
+            "version_id": "",
+            "page_number": null,
+            "source_url": ""
           }
         ]
       },
@@ -64,7 +72,9 @@
           "chunk_id": "D01-1",
           "title": "费用报销制度",
           "text": "员工应在费用发生后30天内提交报销申请。",
-          "version_id": ""
+          "version_id": "",
+          "page_number": null,
+          "source_url": ""
         }
       },
       {
@@ -80,10 +90,17 @@
           "chunk_id": "D02-1",
           "title": "费用报销说明",
           "text": "员工应在费用发生后15天内提交报销申请。",
-          "version_id": ""
+          "version_id": "",
+          "page_number": null,
+          "source_url": ""
         }
       }
     ],
-    "decision_reason": "多份资料需要核对"
+    "decision_reason": "多份资料需要核对",
+    "query_rewrite": {
+      "original": "报销期限多久？",
+      "rewritten": "报销期限多久？",
+      "status": "skipped"
+    }
   }
 }

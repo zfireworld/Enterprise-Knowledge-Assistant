@@ -1,0 +1,9 @@
+{
+  "checks": {
+    "page_1_and_2_indexed": true,
+    "answer_cites_page_2": true,
+    "source_link_page_2": true,
+    "source_file_matches_upload": true
+  },
+  "note": "浏览器 PDF 阅读器跳页未在本脚本中验证。"
+}

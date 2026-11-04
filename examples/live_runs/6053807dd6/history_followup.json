@@ -1,0 +1,83 @@
+{
+  "mode": "real_model_real_milvus",
+  "collection": "kb_eval_6053807dd6",
+  "input": {
+    "question": "有几天？",
+    "history": [
+      {
+        "role": "user",
+        "content": "年假怎么规定？"
+      },
+      {
+        "role": "assistant",
+        "content": "根据企业年假制度，符合条件的员工每年可享受5天年假。但当前资料中未详细说明“符合条件”的具体标准（如工龄要求、入职时间等）以及年假的申请流程、有效期等其他规定。如需了解更详细的信息，建议查阅完整的《04-年假制度》文件或咨询人力资源部门。"
+      }
+    ],
+    "model": "real"
+  },
+  "elapsed_seconds": 14.39,
+  "result": {
+    "http_status": 200,
+    "body": {
+      "status": "completed",
+      "answer": "根据企业年假制度，符合条件的员工每年可享受5天年假。但当前资料中未详细说明“符合条件”的具体标准（如工龄要求、入职时间等），如需了解更详细的信息，建议查阅完整的《04-年假制度》文件或咨询人力资源部门。",
+      "citations": [
+        {
+          "doc_id": "DOC-1571369C",
+          "chunk_id": "470223410697029201",
+          "quote": "符合条件的员工每年可享受5天年假。",
+          "version_date": "2025-01-01",
+          "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+          "page_number": null,
+          "source_url": "/api/documents/DOC-1571369C/versions/240e5cc038ee4602b5ad95720e4c85a5/file"
+        }
+      ],
+      "missing_information": "“符合条件”的具体标准（如工龄要求、入职时间等）以及年假的申请流程、有效期等其他规定。",
+      "trace": [
+        {
+          "action": "search_documents",
+          "reason": "用户询问年假有几天，需检索企业年假制度中关于天数的具体规定。",
+          "arguments": {
+            "query": "年假 天数"
+          },
+          "result": [
+            {
+              "doc_id": "DOC-1571369C",
+              "version_date": "2025-01-01",
+              "chunk_id": "470223410697029201",
+              "title": "04-年假制度",
+              "text": "符合条件的员工每年可享受5天年假。",
+              "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+              "page_number": null,
+              "source_url": ""
+            }
+          ]
+        },
+        {
+          "action": "read_passage",
+          "reason": "搜索结果已显示年假天数为5天，需读取原文核对后引用。",
+          "arguments": {
+            "doc_id": "DOC-1571369C",
+            "chunk_id": "470223410697029201"
+          },
+          "result": {
+            "doc_id": "DOC-1571369C",
+            "version_date": "2025-01-01",
+            "chunk_id": "470223410697029201",
+            "title": "04-年假制度",
+            "text": "符合条件的员工每年可享受5天年假。",
+            "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+            "page_number": null,
+            "source_url": "/api/documents/DOC-1571369C/versions/240e5cc038ee4602b5ad95720e4c85a5/file"
+          }
+        }
+      ],
+      "decision_reason": "已通过搜索并读取原文核对，确认年假天数为5天，直接引用原文回答用户问题。",
+      "query_rewrite": {
+        "original": "有几天？",
+        "rewritten": "年假有几天？",
+        "status": "completed"
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "collection": "kb_eval_6053807dd6",
+  "tasks": {
+    "01-费用报销制度.md": {
+      "id": "0f8de87858bd46d28836cc509d7e65fb",
+      "filename": "01-费用报销制度.md",
+      "status": "completed",
+      "doc_id": "DOC-0F8DE878",
+      "title": "01-费用报销制度",
+      "version_id": "b1dafe2e71ff43a9a53a56ffcec09611",
+      "version_number": 1,
+      "version": {
+        "version_id": "b1dafe2e71ff43a9a53a56ffcec09611",
+        "number": 1,
+        "version_date": "2025-01-01",
+        "status": "processing",
+        "chunks": 0,
+        "expected_current": null,
+        "source": {
+          "storage_key": "0f8de87858bd46d28836cc509d7e65fb/01-费用报销制度.md",
+          "filename": "01-费用报销制度.md"
+        }
+      },
+      "step": "版本已发布",
+      "chunks": 1
+    },
+    "02-费用报销说明.md": {
+      "id": "cdd89208e1a14928aaf44b86794b8f5a",
+      "filename": "02-费用报销说明.md",
+      "status": "completed",
+      "doc_id": "DOC-CDD89208",
+      "title": "02-费用报销说明",
+      "version_id": "e92d6abc2cd04a0090d9f5af24398ae7",
+      "version_number": 1,
+      "version": {
+        "version_id": "e92d6abc2cd04a0090d9f5af24398ae7",
+        "number": 1,
+        "version_date": "2025-02-01",
+        "status": "processing",
+        "chunks": 0,
+        "expected_current": null,
+        "source": {
+          "storage_key": "cdd89208e1a14928aaf44b86794b8f5a/02-费用报销说明.md",
+          "filename": "02-费用报销说明.md"
+        }
+      },
+      "step": "版本已发布",
+      "chunks": 1
+    },
+    "03-账号登录FAQ.md": {
+      "id": "09532fdb6acc4fb5a729b56675c2ca35",
+      "filename": "03-账号登录FAQ.md",
+      "status": "completed",
+      "doc_id": "DOC-09532FDB",
+      "title": "03-账号登录FAQ",
+      "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+      "version_number": 1,
+      "version": {
+        "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+        "number": 1,
+        "version_date": "2025-03-01",
+        "status": "processing",
+        "chunks": 0,
+        "expected_current": null,
+        "source": {
+          "storage_key": "09532fdb6acc4fb5a729b56675c2ca35/03-账号登录FAQ.md",
+          "filename": "03-账号登录FAQ.md"
+        }
+      },
+      "step": "版本已发布",
+      "chunks": 1
+    },
+    "04-年假制度.md": {
+      "id": "1571369c25df44a480e0c348a1917e37",
+      "filename": "04-年假制度.md",
+      "status": "completed",
+      "doc_id": "DOC-1571369C",
+      "title": "04-年假制度",
+      "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+      "version_number": 1,
+      "version": {
+        "version_id": "240e5cc038ee4602b5ad95720e4c85a5",
+        "number": 1,
+        "version_date": "2025-01-01",
+        "status": "processing",
+        "chunks": 0,
+        "expected_current": null,
+        "source": {
+          "storage_key": "1571369c25df44a480e0c348a1917e37/04-年假制度.md",
+          "filename": "04-年假制度.md"
+        }
+      },
+      "step": "版本已发布",
+      "chunks": 1
+    }
+  }
+}

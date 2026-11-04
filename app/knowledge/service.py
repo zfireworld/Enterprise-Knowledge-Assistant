@@ -189,7 +189,8 @@ class KnowledgeService:
                 problems.append({"doc_id": doc_id, "chunk_id": chunk_id, "reason": "引用文字不是该片段中的连续原文"})
                 continue
             checked.append({**citation, "doc_id": doc_id, "chunk_id": chunk_id, "quote": matched_quote,
-                            "version_date": passage.version_date, "version_id": passage.version_id})
+                            "version_date": passage.version_date, "version_id": passage.version_id,
+                            "page_number": passage.page_number, "source_url": passage.source_url})
         if problems:
             result = self._incomplete("引用不属于已读取原文", trace)
             result["citation_problems"] = problems

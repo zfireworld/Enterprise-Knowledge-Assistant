@@ -1,13 +1,13 @@
-Command: python -m unittest test.test_knowledge test.test_knowledge_web test.test_knowledge_chunking test.test_knowledge_async test.test_query_rewrite test.test_milvus_result_normalization test.test_task_events test.test_knowledge_reranking test.test_full_chunk_search -v
+Command: python -m unittest test.test_knowledge test.test_knowledge_web test.test_knowledge_chunking test.test_knowledge_async test.test_query_rewrite test.test_milvus_result_normalization test.test_task_events test.test_knowledge_reranking test.test_full_chunk_search test.test_source_location -v
 Exit code: 0
 
-[32m2026-11-04 16:39:22.455[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：RuntimeError: 模型不可用[0m
-[32m2026-11-04 16:39:22.793[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数不是有效数值[0m
-[32m2026-11-04 16:39:22.803[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数数量与候选数量不一致[0m
-[32m2026-11-04 16:39:22.812[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m227 [0m - [1mStep 3: 触发断崖截断 @ index=1 (Score 0.9400 -> 0.1000, Gap=0.8400)[0m
-[32m2026-11-04 16:39:22.822[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 2 条文档 (TopK=2)[0m
-[32m2026-11-04 16:39:22.832[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 1 条文档 (TopK=1)[0m
-[32m2026-11-04 16:39:22.843[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 3 条文档 (TopK=3)[0m
+[32m2026-11-04 17:21:26.216[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：RuntimeError: 模型不可用[0m
+[32m2026-11-04 17:21:26.712[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数不是有效数值[0m
+[32m2026-11-04 17:21:26.727[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数数量与候选数量不一致[0m
+[32m2026-11-04 17:21:26.743[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m227 [0m - [1mStep 3: 触发断崖截断 @ index=1 (Score 0.9400 -> 0.1000, Gap=0.8400)[0m
+[32m2026-11-04 17:21:26.758[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 2 条文档 (TopK=2)[0m
+[32m2026-11-04 17:21:26.775[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 1 条文档 (TopK=1)[0m
+[32m2026-11-04 17:21:26.793[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 3 条文档 (TopK=3)[0m
 test_changed_document_is_used (test.test_knowledge.KnowledgeTests.test_changed_document_is_used)
 替换原文后，答案和引用应随之变化。 ... ok
 test_citation_whitespace_uses_original_text (test.test_knowledge.KnowledgeTests.test_citation_whitespace_uses_original_text)
@@ -38,6 +38,8 @@ test_import_then_chat (test.test_knowledge_web.KnowledgeWebTests.test_import_the
 上传文档后可查询到其原文和版本。 ... ok
 test_invalid_file (test.test_knowledge_web.KnowledgeWebTests.test_invalid_file)
 拒绝不支持的文件格式。 ... ok
+test_pdf_import_records_pages_and_version_file (test.test_knowledge_web.KnowledgeWebTests.test_pdf_import_records_pages_and_version_file)
+PDF 内容按页写入，版本记录可打开原始上传文件。 ... ok
 test_repository_failure (test.test_knowledge_web.KnowledgeWebTests.test_repository_failure)
 知识库连接失败时返回明确的服务错误。 ... ok
 test_update_keeps_document_id_and_selects_new_version (test.test_knowledge_web.KnowledgeWebTests.test_update_keeps_document_id_and_selects_new_version)
@@ -96,12 +98,24 @@ test_search_returns_full_text_but_does_not_register_evidence (test.test_full_chu
 搜索可看到 160 字之后的内容，但不能直接引用。 ... ok
 test_search_then_read_allows_verified_quote (test.test_full_chunk_search.FullChunkSearchTests.test_search_then_read_allows_verified_quote)
 模型依据完整候选选择读取，读取后的引用可通过校验。 ... ok
+test_citation_uses_verified_passage_not_model_url (test.test_source_location.SourceLocationTests.test_citation_uses_verified_passage_not_model_url)
+最终引用只能携带读取工具返回的页码和链接。 ... ok
+test_invalid_page_never_guesses (test.test_source_location.SourceLocationTests.test_invalid_page_never_guesses)
+带内容的块缺失页码时拒绝推断来源。 ... ok
+test_milvus_read_attaches_source_only_for_matching_published_version (test.test_source_location.SourceLocationTests.test_milvus_read_attaches_source_only_for_matching_published_version)
+读取时使用文档、版本、页码生成来源；旧版本缺失则不生成链接。 ... ok
+test_milvus_record_has_page_only_when_known (test.test_source_location.SourceLocationTests.test_milvus_record_has_page_only_when_known)
+写入记录在有页码时保留字段，未知时不编造。 ... ok
+test_page_chunks_preserve_physical_pages_and_long_text (test.test_source_location.SourceLocationTests.test_page_chunks_preserve_physical_pages_and_long_text)
+页码从零转换为一，长文本切分后不跨页并保留表格和图片引用。 ... ok
+test_version_file_endpoint_and_unsafe_paths (test.test_source_location.SourceLocationTests.test_version_file_endpoint_and_unsafe_paths)
+文件接口返回指定的历史版本，并拒绝缺失、未发布和越界路径。 ... ok
 
 ----------------------------------------------------------------------
-Ran 44 tests in 14.292s
+Ran 51 tests in 23.065s
 
 OK
-Exception ignored in: <function ResourceTracker.__del__ at 0x000001F790720E00>
+Exception ignored in: <function ResourceTracker.__del__ at 0x0000015C03349DA0>
 Traceback (most recent call last):
   File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 80, in __del__
   File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 89, in _stop

@@ -1,0 +1,8 @@
+{
+  "run_id": "6053807dd6",
+  "started_utc": "2026-11-04T09:00:26.664484+00:00",
+  "collection": "kb_eval_6053807dd6",
+  "model": "qwen3.8-max-0902",
+  "mode": "real_model_real_milvus",
+  "tool_failure": "在单独案例中注入检索异常；其余案例无故障注入"
+}

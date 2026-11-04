@@ -1,0 +1,74 @@
+{
+  "mode": "real_model_real_milvus",
+  "collection": "kb_eval_6053807dd6",
+  "input": {
+    "question": "账号密码如何重置？",
+    "history": [],
+    "model": "real"
+  },
+  "elapsed_seconds": 18.48,
+  "result": {
+    "http_status": 200,
+    "body": {
+      "status": "completed",
+      "answer": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+      "citations": [
+        {
+          "doc_id": "DOC-09532FDB",
+          "chunk_id": "470223410697029199",
+          "quote": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+          "version_date": "2025-03-01",
+          "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+          "page_number": null,
+          "source_url": "/api/documents/DOC-09532FDB/versions/a4b18d76f1134b1aa8a1f2eba014ea89/file"
+        }
+      ],
+      "missing_information": "",
+      "trace": [
+        {
+          "action": "search_documents",
+          "reason": "用户询问账号密码如何重置，需要检索相关操作指引或制度文档。",
+          "arguments": {
+            "query": "账号密码重置"
+          },
+          "result": [
+            {
+              "doc_id": "DOC-09532FDB",
+              "version_date": "2025-03-01",
+              "chunk_id": "470223410697029199",
+              "title": "03-账号登录FAQ",
+              "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+              "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+              "page_number": null,
+              "source_url": ""
+            }
+          ]
+        },
+        {
+          "action": "read_passage",
+          "reason": "需要读取该片段原文以核对账号密码重置的具体说明，确保引用准确。",
+          "arguments": {
+            "doc_id": "DOC-09532FDB",
+            "chunk_id": "470223410697029199"
+          },
+          "result": {
+            "doc_id": "DOC-09532FDB",
+            "version_date": "2025-03-01",
+            "chunk_id": "470223410697029199",
+            "title": "03-账号登录FAQ",
+            "text": "员工忘记登录密码时，应通过内部账号平台重置密码。",
+            "version_id": "a4b18d76f1134b1aa8a1f2eba014ea89",
+            "page_number": null,
+            "source_url": "/api/documents/DOC-09532FDB/versions/a4b18d76f1134b1aa8a1f2eba014ea89/file"
+          }
+        }
+      ],
+      "decision_reason": "已检索并读取相关文档片段，原文直接说明了账号密码重置的方式。",
+      "query_rewrite": {
+        "original": "账号密码如何重置？",
+        "rewritten": "账号密码如何重置？",
+        "status": "skipped"
+      }
+    }
+  }
+}

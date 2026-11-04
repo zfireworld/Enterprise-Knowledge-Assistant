@@ -1,0 +1,13 @@
+{
+  "checks": {
+    "normal": true,
+    "rewrite": true,
+    "conflict": true,
+    "missing": true,
+    "history": true,
+    "updated": true,
+    "tool_failure_injected": true,
+    "source_file": true
+  },
+  "note": "初步自动检查，须结合完整 Trace 人工审核；工具失败为注入。"
+}

@@ -19,7 +19,9 @@
         "chunk_id": "D04-1",
         "quote": "符合条件的员工每年可享受5天年假。",
         "version_date": "2025-01-01",
-        "version_id": ""
+        "version_id": "",
+        "page_number": null,
+        "source_url": ""
       }
     ],
     "missing_information": "",
@@ -37,7 +39,9 @@
             "chunk_id": "D04-1",
             "title": "年假制度",
             "text": "符合条件的员工每年可享受5天年假。",
-            "version_id": ""
+            "version_id": "",
+            "page_number": null,
+            "source_url": ""
           }
         ]
       },
@@ -54,10 +58,17 @@
           "chunk_id": "D04-1",
           "title": "年假制度",
           "text": "符合条件的员工每年可享受5天年假。",
-          "version_id": ""
+          "version_id": "",
+          "page_number": null,
+          "source_url": ""
         }
       }
     ],
-    "decision_reason": "已有原文依据"
+    "decision_reason": "已有原文依据",
+    "query_rewrite": {
+      "original": "有几天？",
+      "rewritten": "有几天？",
+      "status": "skipped"
+    }
   }
 }

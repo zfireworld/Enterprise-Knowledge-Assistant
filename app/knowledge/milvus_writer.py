@@ -33,7 +33,10 @@ class MilvusWriter:
 
     def _record(self, item: Passage, vectors: dict[str, Any], index: int) -> dict[str, Any]:
         """将片段与对应的两种向量组装为 Milvus 行。"""
-        return {"doc_id": item.doc_id, "version_id": item.version_id, "version_date": item.version_date, "title": item.title,
+        record = {"doc_id": item.doc_id, "version_id": item.version_id, "version_date": item.version_date, "title": item.title,
                 "parent_title": item.title, "part": 0, "file_title": item.title, "item_name": "",
                 "content": item.text, "dense_vector": vectors["dense"][index],
                 "sparse_vector": vectors["sparse"][index]}
+        if item.page_number is not None:
+            record["page_number"] = item.page_number
+        return record

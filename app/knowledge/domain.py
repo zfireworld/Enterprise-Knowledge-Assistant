@@ -14,6 +14,8 @@ class Passage:
     title: str
     text: str
     version_id: str = ""
+    page_number: int | None = None
+    source_url: str = ""
 
 
 class Repository(Protocol):

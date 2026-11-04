@@ -1,0 +1,23 @@
+{
+  "id": "0c5081563ebd4f29a02ebd863d263267",
+  "filename": "05-账号登录FAQ更新版.md",
+  "status": "completed",
+  "doc_id": "DOC-09532FDB",
+  "title": "03-账号登录FAQ",
+  "version_id": "bf372f4fbc0c4ce48bb50aa4e85b1052",
+  "version_number": 2,
+  "version": {
+    "version_id": "bf372f4fbc0c4ce48bb50aa4e85b1052",
+    "number": 2,
+    "version_date": "2025-04-01",
+    "status": "processing",
+    "chunks": 0,
+    "expected_current": "a4b18d76f1134b1aa8a1f2eba014ea89",
+    "source": {
+      "storage_key": "0c5081563ebd4f29a02ebd863d263267/05-账号登录FAQ更新版.md",
+      "filename": "05-账号登录FAQ更新版.md"
+    }
+  },
+  "step": "版本已发布",
+  "chunks": 1
+}

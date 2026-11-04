@@ -3,6 +3,8 @@
 import asyncio
 import json
 import os
+from dataclasses import replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.knowledge.domain import Passage
@@ -10,6 +12,8 @@ from app.knowledge.reranking import rerank_candidates
 
 if TYPE_CHECKING:
     from app.knowledge.version_repository import VersionRepository
+
+SOURCE_ROOT = Path(__file__).resolve().parents[2] / "output" / "web_imports"
 
 
 def _create_hyde(query: str) -> str:
@@ -72,7 +76,7 @@ class MilvusRepository:
         requests = create_hybrid_search_requests(vectors["dense"][0], vectors["sparse"][0],
                                                   expr=self._version_filter(), limit=10)
         results = hybrid_search(self.client, self.collection, requests, limit=10,
-                                output_fields=["doc_id", "version_id", "version_date", "chunk_id", "content", "title"])
+                                output_fields=["doc_id", "version_id", "version_date", "chunk_id", "content", "title", "page_number"])
         if results is None:
             raise RuntimeError("Milvus 混合检索失败")
         return _as_entity_list(results[0] if results else [])
@@ -104,7 +108,7 @@ class MilvusRepository:
     def read(self, doc_id: str, chunk_id: str) -> Passage:
         """按 Milvus 主键读取并验证文档归属；缺失时抛出 LookupError。"""
         records = self.client.get(collection_name=self.collection, ids=[int(chunk_id)],
-                                  output_fields=["doc_id", "version_id", "version_date", "chunk_id", "content", "title"])
+                                  output_fields=["doc_id", "version_id", "version_date", "chunk_id", "content", "title", "page_number"])
         if not records:
             raise LookupError(f"片段不存在：{doc_id}/{chunk_id}")
         passage = self._passage(records[0])
@@ -113,7 +117,19 @@ class MilvusRepository:
         expected = self._active_snapshot().get(doc_id, "legacy")
         if (passage.version_id or "legacy") != expected:
             raise LookupError("片段不属于本次查询的当前版本")
-        return passage
+        return self._attach_source(passage)
+
+    def _attach_source(self, passage: Passage) -> Passage:
+        """仅为可访问的已发布版本添加文件链接；历史缺失不猜测。"""
+        if not passage.version_id:
+            return passage
+        from app.knowledge.source_files import source_url, version_source
+        try:
+            path = version_source(self._version_store(), SOURCE_ROOT, passage.doc_id, passage.version_id)
+        except FileNotFoundError:
+            return passage
+        page = passage.page_number if path.suffix.lower() == ".pdf" else None
+        return replace(passage, source_url=source_url(passage.doc_id, passage.version_id, page))
 
     def list_documents(self) -> list[dict[str, Any]]:
         """列出集合中最多 1000 个片段所属的文档。"""
@@ -152,5 +168,8 @@ class MilvusRepository:
         """将 Milvus 记录转换为片段；缺少文档或版本信息时抛出 ValueError。"""
         if not item.get("doc_id") or not item.get("version_date"):
             raise ValueError("Milvus 片段缺少 doc_id 或 version_date，需补充元数据并重新导入")
+        page = item.get("page_number")
+        if not isinstance(page, int) or isinstance(page, bool) or page < 1:
+            page = None
         return Passage(str(item["doc_id"]), str(item["version_date"]), str(item.get("chunk_id", item.get("id"))),
-                       str(item.get("title", "")), str(item.get("content", "")), str(item.get("version_id") or ""))
+                       str(item.get("title", "")), str(item.get("content", "")), str(item.get("version_id") or ""), page)

@@ -14,6 +14,7 @@ from app.knowledge.import_service import ImportService
 from app.knowledge.chat_stream import chat_event_stream
 from app.knowledge.mock_model import MockDecisionModel
 from app.knowledge.service import KnowledgeService
+from app.knowledge.source_files import version_source
 from app.knowledge.tools import KnowledgeTools
 from app.utils.task_events import task_event_stream
 
@@ -88,6 +89,20 @@ def document_versions(doc_id: str) -> dict:
         raise
     except Exception as exc:
         raise HTTPException(503, f"读取版本失败：{exc}") from exc
+
+
+@app.get("/api/documents/{doc_id}/versions/{version_id}/file")
+def document_source_file(doc_id: str, version_id: str) -> FileResponse:
+    """返回已发布版本的原文件；不存在或路径无效时返回 404。"""
+    try:
+        path = version_source(importer._store(), importer.work_dir, doc_id, version_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(503, f"读取原文件失败：{exc}") from exc
+    media_type = "application/pdf" if path.suffix.lower() == ".pdf" else "text/plain; charset=utf-8"
+    return FileResponse(path, media_type=media_type, filename=path.name, content_disposition_type="inline",
+                        headers={"X-Content-Type-Options": "nosniff"})
 
 
 @app.get("/api/import/{task_id}")

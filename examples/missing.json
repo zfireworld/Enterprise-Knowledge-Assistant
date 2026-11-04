@@ -20,6 +20,11 @@
         "result": []
       }
     ],
-    "decision_reason": "检索无结果"
+    "decision_reason": "检索无结果",
+    "query_rewrite": {
+      "original": "公司停车位收费吗？",
+      "rewritten": "公司停车位收费吗？",
+      "status": "skipped"
+    }
   }
 }

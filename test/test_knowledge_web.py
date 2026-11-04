@@ -25,7 +25,8 @@ class FakeVersionStore:
         """列出文档版本记录。"""
         return list(self.documents.values())
 
-    def reserve(self, doc_id: str, title: str, version_date: str, new_document: bool) -> dict:
+    def reserve(self, doc_id: str, title: str, version_date: str, new_document: bool,
+                source: dict[str, str] | None = None) -> dict:
         """预留版本号和发布前的当前指针。"""
         if new_document:
             self.documents[doc_id] = {"doc_id": doc_id, "title": title, "current_version": None, "versions": []}
@@ -33,6 +34,8 @@ class FakeVersionStore:
         number = len(doc["versions"]) + 1
         version = {"version_id": f"{doc_id}-version-{number}", "number": number, "version_date": version_date,
                    "status": "processing", "chunks": 0, "expected_current": doc["current_version"]}
+        if source is not None:
+            version["source"] = source
         doc["versions"].append(version)
         return version
 
@@ -114,6 +117,27 @@ class KnowledgeWebTests(unittest.TestCase):
         self.assertEqual(answer["status"], "completed")
         self.assertEqual(answer["citations"][0]["version_date"], "2026-01-01")
         self.assertIn("七天", answer["citations"][0]["quote"])
+
+    def test_pdf_import_records_pages_and_version_file(self) -> None:
+        """PDF 内容按页写入，版本记录可打开原始上传文件。"""
+        def parse_pdf(service: ImportService, path: Path, task_id: str) -> str:
+            """模拟 MinerU 输出，避免测试依赖本地解析服务。"""
+            output = path.parent / path.stem / "auto"
+            output.mkdir(parents=True)
+            records = [{"type": "text", "text": "第一页内容。", "page_idx": 0},
+                       {"type": "text", "text": "第二页内容。", "page_idx": 1}]
+            (output / f"{path.stem}_content_list.json").write_text(
+                json.dumps(records, ensure_ascii=False), encoding="utf-8")
+            return "第一页内容。\n第二页内容。"
+
+        with patch.object(ImportService, "_read_text", autospec=True, side_effect=parse_pdf):
+            upload = self.client.post("/api/import", files={"file": ("指南.pdf", b"%PDF-test")},
+                                      data={"version_date": "2026-01-01"})
+        task = self.client.get(f"/api/import/{upload.json()['id']}").json()
+        self.assertEqual(task["status"], "completed")
+        self.assertEqual([item.page_number for item in FakeRepository.passages], [1, 2])
+        url = f"/api/documents/{task['doc_id']}/versions/{task['version_id']}/file"
+        self.assertEqual(self.client.get(url).content, b"%PDF-test")
 
     def test_invalid_file(self) -> None:
         """拒绝不支持的文件格式。"""
