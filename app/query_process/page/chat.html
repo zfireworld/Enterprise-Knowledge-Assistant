@@ -653,14 +653,10 @@
       if(progressEl) bubble.appendChild(progressEl);
     }
 
-    async function apiHealth(){
-      try{
-        const res = await fetch(`${API_BASE}/health`);
-        if(!res.ok) throw new Error('health not ok');
-        apiPill.textContent = `API: 已连接`;
-      }catch(e){
-        apiPill.textContent = `API: 未连接`;
-      }
+    function watchApiHealth(){
+      const source = new EventSource(`${API_BASE}/health/events`);
+      source.addEventListener('ready', () => { apiPill.textContent = 'API: 已连接'; });
+      source.onerror = () => { apiPill.textContent = 'API: 未连接'; };
     }
 
     async function loadHistory(){
@@ -700,31 +696,6 @@
         throw new Error(msg || '请求失败');
       }
       return await res.json();
-    }
-
-    async function poll(taskId, botMsgEl){
-      const typing = botMsgEl.querySelector('.typing');
-      const interval = setInterval(async () => {
-        try{
-          const res = await fetch(`${API_BASE}/status/${taskId}`);
-          const data = await res.json();
-          renderProgress(botMsgEl, data.done_list, data.running_list, data.status);
-
-          if(data.status === 'completed'){
-            if(typing) typing.remove();
-            finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || []);
-            clearInterval(interval);
-            sendBtn.disabled = false;
-          }else if(data.status === 'failed'){
-            if(typing) typing.remove();
-            finalizeBotAnswer(botMsgEl, data.answer, data.error || 'failed', data.image_urls || []);
-            clearInterval(interval);
-            sendBtn.disabled = false;
-          }
-        }catch(e){
-          // 轮询错误不立刻终止，让用户稍后重试
-        }
-      }, 1200);
     }
 
     async function onSend(){
@@ -884,8 +855,7 @@
       scrollToBottom();
     });
 
-    apiHealth();
-    setInterval(apiHealth, 5000);
+    watchApiHealth();
     loadHistory();
     setTimeout(() => inputEl.focus(), 200);
   </script>

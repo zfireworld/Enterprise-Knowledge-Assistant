@@ -6,14 +6,16 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.knowledge.import_service import ImportService
+from app.knowledge.chat_stream import chat_event_stream
 from app.knowledge.mock_model import MockDecisionModel
 from app.knowledge.service import KnowledgeService
 from app.knowledge.tools import KnowledgeTools
+from app.utils.task_events import task_event_stream
 
 ROOT = Path(__file__).resolve().parents[2]
 STATIC = ROOT / "app" / "knowledge" / "web"
@@ -91,15 +93,30 @@ def document_versions(doc_id: str) -> dict:
 @app.get("/api/import/{task_id}")
 def import_status(task_id: str) -> dict:
     """查询导入状态；不存在时返回 404。"""
-    task = importer.tasks.get(task_id)
+    task = importer.get_task(task_id)
     if task is None:
         raise HTTPException(404, "导入任务不存在")
-    return task.copy()
+    return task
+
+
+@app.get("/api/import/{task_id}/events")
+async def import_events(task_id: str) -> StreamingResponse:
+    """推送导入任务状态；任务不存在时返回 404。"""
+    if importer.get_task(task_id) is None:
+        raise HTTPException(404, "导入任务不存在")
+    return StreamingResponse(task_event_stream(task_id, importer.get_task), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest) -> dict:
     """使用共享知识库回答问题，返回引用和执行状态。"""
+    service = await _chat_service(request)
+    return await service.ask_async(request.question, request.history)
+
+
+async def _chat_service(request: ChatRequest) -> KnowledgeService:
+    """验证请求并创建模型与仓库；初始化失败返回 HTTP 错误。"""
     if not request.question.strip():
         raise HTTPException(400, "请输入问题")
     if request.model == "real":
@@ -115,5 +132,13 @@ async def chat(request: ChatRequest) -> dict:
         repository = await asyncio.to_thread(MilvusRepository)
     except Exception as exc:
         raise HTTPException(503, f"知识库连接失败：{exc}") from exc
-    service = KnowledgeService(model, KnowledgeTools(repository))
-    return await service.ask_async(request.question, request.history)
+    return KnowledgeService(model, KnowledgeTools(repository))
+
+
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest) -> StreamingResponse:
+    """通过 SSE 推送问答过程和完成引用校验的最终结果。"""
+    service = await _chat_service(request)
+    return StreamingResponse(chat_event_stream(service, request.question, request.history),
+                             media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

@@ -17,6 +17,32 @@ function switchView(view) {
   if (view === 'documents') refreshDocuments();
 }
 
+function showTrace(result) {
+  const steps = result.trace || [];
+  if (!steps.length && !result.citation_problems?.length && !result.query_rewrite) return null;
+  const details = el('details', 'trace-details', '');
+  details.append(el('summary', '', '查看执行过程'));
+  if (result.query_rewrite?.status === 'completed') {
+    details.append(el('div', 'trace-line', `问题改写：${result.query_rewrite.rewritten}`));
+  } else if (result.query_rewrite?.status === 'failed') {
+    details.append(el('div', 'trace-line', '问题改写失败，已使用原问题继续。'));
+  }
+  for (const [index, step] of steps.entries()) {
+    const line = el('div', 'trace-line', `${index + 1}. ${step.action || '未知步骤'}`);
+    if (step.arguments) line.append(el('div', '', `参数：${JSON.stringify(step.arguments)}`));
+    if (step.reason) line.append(el('div', '', `依据：${step.reason}`));
+    if (step.error) line.append(el('div', 'trace-error', `错误：${step.error}`));
+    else if (Array.isArray(step.result)) line.append(el('div', '', `结果：${step.result.length} 条`));
+    else if (step.result?.doc_id) line.append(el('div', '', `已读取：${step.result.doc_id} / ${step.result.chunk_id}`));
+    else if (typeof step.result === 'string') line.append(el('div', '', `结果：${step.result}`));
+    details.append(line);
+  }
+  for (const problem of result.citation_problems || []) {
+    details.append(el('div', 'trace-line trace-error', `引用问题：${problem.doc_id} / ${problem.chunk_id}：${problem.reason}`));
+  }
+  return details;
+}
+
 function showMessage(role, content, result) {
   byId('welcome').classList.add('hidden');
   const row = el('div', `message ${role}`, '');
@@ -34,10 +60,46 @@ function showMessage(role, content, result) {
     bubble.append(source);
   }
   if (result?.missing_information) bubble.append(el('div', 'citation', `待补充：${result.missing_information}`));
+  if (result) {
+    const trace = showTrace(result);
+    if (trace) bubble.append(trace);
+  }
   row.append(bubble);
   byId('conversation').append(row);
   byId('conversation').scrollTop = byId('conversation').scrollHeight;
   return row;
+}
+
+async function streamQuestion(payload, loading) {
+  const response = await fetch('/api/chat/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload) });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `请求失败 (${response.status})`);
+  }
+  if (!response.body) throw new Error('浏览器不支持流式响应');
+  const reader = response.body.getReader(), decoder = new TextDecoder();
+  let buffer = '', finalResult;
+  try {
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream: true});
+      let boundary;
+      while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+        const frame = buffer.slice(0, boundary); buffer = buffer.slice(boundary + 2);
+        const lines = frame.split('\n'), type = lines.find(line => line.startsWith('event: '))?.slice(7);
+        const data = lines.filter(line => line.startsWith('data: ')).map(line => line.slice(6)).join('\n');
+        if (!type || !data) continue;
+        const event = JSON.parse(data);
+        if (type === 'progress') loading.querySelector('.message-text').textContent = event.message;
+        if (type === 'failure') throw new Error(event.message || '问答执行失败');
+        if (type === 'final') finalResult = event;
+      }
+      if (finalResult) return finalResult;
+    }
+    throw new Error('连接已结束，未收到最终结果');
+  } finally { await reader.cancel(); }
 }
 
 async function sendQuestion(question) {
@@ -48,8 +110,7 @@ async function sendQuestion(question) {
   showMessage('user', question);
   const loading = showMessage('assistant', '正在检索知识资料…');
   try {
-    const result = await request('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history: state.history.slice(-20), model: byId('model-select').value }) });
+    const result = await streamQuestion({ question, history: state.history.slice(-20), model: byId('model-select').value }, loading);
     loading.remove();
     showMessage('assistant', result.answer || '暂时无法生成回答。', result);
     state.history.push({ role: 'user', content: question }, { role: 'assistant', content: result.answer || '' });
@@ -133,14 +194,43 @@ async function showVersions(docId) {
   } catch (error) { list.replaceChildren(el('p', 'import-feedback error', error.message)); }
 }
 
-async function pollImport(id) {
-  for (;;) {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const task = await request(`/api/import/${encodeURIComponent(id)}`);
-    if (task.status === 'completed') return task;
-    if (task.status === 'failed') throw new Error(task.error || '导入失败');
-    byId('import-feedback').textContent = `${task.step || '正在处理文档'}${task.chunks ? `（${task.chunks} 个片段）` : ''}，请稍候…`;
-  }
+function watchImport(id) {
+  return new Promise((resolve, reject) => {
+    const base = `/api/import/${encodeURIComponent(id)}`;
+    let source, retries = 0, settled = false, reconnectTimer;
+    const finish = (error, task) => {
+      if (settled) return;
+      settled = true; source?.close(); clearTimeout(timeout); clearTimeout(reconnectTimer);
+      if (error) reject(error); else resolve(task);
+    };
+    const timeout = setTimeout(() => finish(new Error('等待进度超时，任务可能仍在后台运行')), 30 * 60 * 1000);
+    const handleTask = task => {
+      if (task.status === 'completed') return finish(null, task);
+      if (task.status === 'failed') return finish(new Error(task.error || '导入失败'));
+      byId('import-feedback').textContent = `${task.step || '正在处理文档'}${task.chunks ? `（${task.chunks} 个片段）` : ''}，请稍候…`;
+    };
+    const connect = () => {
+      if (settled) return;
+      source = new EventSource(`${base}/events`);
+      source.addEventListener('progress', event => {
+        try { handleTask(JSON.parse(event.data)); }
+        catch (_) { finish(new Error('导入进度数据无效')); }
+      });
+      source.addEventListener('missing', () => finish(new Error('任务不存在或服务已重启')));
+      source.onerror = async () => {
+        source.close();
+        try {
+          const task = await request(base);
+          handleTask(task);
+          if (settled) return;
+          if (++retries > 3) return finish(new Error('进度连接中断，任务可能仍在后台运行'));
+          byId('import-feedback').textContent = '进度连接中断，正在重新连接…';
+          reconnectTimer = setTimeout(connect, 2000);
+        } catch (error) { finish(error); }
+      };
+    };
+    connect();
+  });
 }
 
 document.querySelectorAll('[data-view]').forEach(node => node.addEventListener('click', () => switchView(node.dataset.view)));
@@ -165,11 +255,11 @@ byId('import-form').addEventListener('submit', async event => {
   button.disabled = true; feedback.classList.remove('error'); feedback.textContent = '正在上传文件…';
   try {
     const task = await request('/api/import', { method: 'POST', body: form });
-    const result = await pollImport(task.id);
+    const result = await watchImport(task.id);
     feedback.textContent = `V${result.version_number} 导入成功：${result.chunks} 个片段。`;
     await refreshDocuments();
     setTimeout(() => byId('import-dialog').close(), 800);
-  } catch (error) { feedback.classList.add('error'); feedback.textContent = `导入失败：${error.message}`; }
+  } catch (error) { feedback.classList.add('error'); feedback.textContent = `导入未完成或状态无法确认：${error.message}`; }
   finally { button.disabled = false; }
 });
 refreshDocuments();

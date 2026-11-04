@@ -7,7 +7,7 @@ import uvicorn
 # 第三方库
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 # 项目内部工具/配置/客户端
 from app.clients.minio_utils import get_minio_client
 from app.utils.path_util import PROJECT_ROOT
@@ -22,6 +22,7 @@ from app.utils.task_utils import (
 from app.import_process.agent.state import get_default_state
 from app.import_process.agent.main_graph import kb_import_app  # LangGraph全流程编译实例
 from app.core.logger import logger  # 项目统一日志工具
+from app.utils.task_events import task_event_stream
 
 # 初始化FastAPI应用实例
 # 标题和描述会在Swagger文档(http://ip:port/docs)中展示
@@ -137,6 +138,7 @@ async def upload_files(background_tasks: BackgroundTasks, files: List[UploadFile
         # 生成全局唯一TaskID（UUID4），作为单个文件的全流程标识
         task_id = str(uuid.uuid4())
         task_ids.append(task_id)
+        update_task_status(task_id, "pending")
         logger.info(f"[{task_id}] 开始处理上传文件，文件名：{file.filename}，文件类型：{file.content_type}")
 
         # 3. 标记「文件上传」阶段为「运行中」，前端轮询可查
@@ -223,6 +225,24 @@ async def get_task_progress(task_id: str):
     logger.info(
         f"[{task_id}] 任务状态查询，当前状态：{task_status_info['status']}，已完成节点：{task_status_info['done_list']}")
     return task_status_info
+
+
+def _task_snapshot(task_id: str) -> Dict[str, Any] | None:
+    """读取任务进度快照；任务不存在或服务重启后返回 None。"""
+    status = get_task_status(task_id)
+    if not status:
+        return None
+    return {"code": 200, "task_id": task_id, "status": status,
+            "done_list": get_done_task_list(task_id), "running_list": get_running_task_list(task_id)}
+
+
+@app.get("/status/{task_id}/events")
+async def task_progress_events(task_id: str) -> StreamingResponse:
+    """订阅导入任务进度；不存在的任务返回 404。"""
+    if _task_snapshot(task_id) is None:
+        raise HTTPException(status_code=404, detail="任务不存在或服务已重启")
+    return StreamingResponse(task_event_stream(task_id, _task_snapshot), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # --------------------------

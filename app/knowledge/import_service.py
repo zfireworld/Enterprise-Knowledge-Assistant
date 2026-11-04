@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from app.knowledge.chunking import split_text
 from app.knowledge.domain import Passage
+from app.utils.task_events import task_events
 
 if TYPE_CHECKING:
     from app.knowledge.version_repository import VersionRepository
@@ -21,9 +22,10 @@ class ImportService:
         self.work_dir = work_dir
         self.tasks: dict[str, dict] = {}
         self.lock = threading.Lock()
+        self.state_lock = threading.Lock()
 
     def create(self, filename: str, content: bytes, version: str, doc_id: str | None = None) -> dict:
-        """创建任务并暂存文件；返回可供轮询的任务信息。"""
+        """创建任务并暂存文件；返回可订阅的任务信息。"""
         task_id = uuid.uuid4().hex
         name = Path(filename.replace("\\", "/")).name
         folder = self.work_dir / task_id
@@ -31,10 +33,24 @@ class ImportService:
         (folder / name).write_bytes(content)
         store, target, title = self._prepare_document(doc_id, task_id, name)
         revision = store.reserve(target, title, version, new_document=doc_id is None)
-        self.tasks[task_id] = {"id": task_id, "filename": name, "status": "pending", "doc_id": target,
+        task = {"id": task_id, "filename": name, "status": "pending", "doc_id": target,
                                "title": title, "version_id": revision["version_id"], "version_number": revision["number"],
                                "version": revision}
-        return self.tasks[task_id].copy()
+        with self.state_lock:
+            self.tasks[task_id] = task
+        return task.copy()
+
+    def get_task(self, task_id: str) -> dict | None:
+        """返回任务状态快照；任务不存在时返回 None。"""
+        with self.state_lock:
+            task = self.tasks.get(task_id)
+            return task.copy() if task is not None else None
+
+    def _update_task(self, task_id: str, **changes: object) -> None:
+        """原子更新任务状态并通知事件订阅者。"""
+        with self.state_lock:
+            self.tasks[task_id].update(changes)
+        task_events.notify(task_id)
 
     def _store(self) -> "VersionRepository":
         """根据当前 Milvus 集合获取版本仓库。"""
@@ -63,21 +79,22 @@ class ImportService:
     def process(self, task_id: str, version: str) -> None:
         """解析任务文件并保存片段；失败时记录明确错误。"""
         task = self.tasks[task_id]
-        task.update(status="processing", step="正在解析文档")
+        self._update_task(task_id, status="processing", step="正在解析文档")
         try:
             path = self.work_dir / task_id / task["filename"]
             text = self._read_text(path, task_id)
             passages = self._split(task["title"], text, version, task_id, task["doc_id"], task["version_id"])
-            task.update(step="正在生成向量并写入知识库", chunks=len(passages))
+            self._update_task(task_id, step="正在生成向量并写入知识库", chunks=len(passages))
             self._save(passages)
             self._store().publish(task["doc_id"], task["version"], len(passages))
-            task.update(status="completed", chunks=len(passages), step="版本已发布")
+            self._update_task(task_id, status="completed", chunks=len(passages), step="版本已发布")
         except Exception as exc:
-            task.update(status="failed", error=str(exc))
+            error = str(exc)
             try:
                 self._store().fail(task["doc_id"], task["version_id"], str(exc))
             except Exception as metadata_error:
-                task["error"] += f"；版本状态更新失败：{metadata_error}"
+                error += f"；版本状态更新失败：{metadata_error}"
+            self._update_task(task_id, status="failed", error=error)
 
     def _read_text(self, path: Path, task_id: str) -> str:
         """读取文本或使用本地 MinerU 解析 PDF。"""

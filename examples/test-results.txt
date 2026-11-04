@@ -1,6 +1,13 @@
-Command: python -m unittest test.test_knowledge test.test_knowledge_web test.test_knowledge_chunking test.test_knowledge_async -v
+Command: python -m unittest test.test_knowledge test.test_knowledge_web test.test_knowledge_chunking test.test_knowledge_async test.test_query_rewrite test.test_milvus_result_normalization test.test_task_events test.test_knowledge_reranking test.test_full_chunk_search -v
 Exit code: 0
 
+[32m2026-11-04 16:39:22.455[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：RuntimeError: 模型不可用[0m
+[32m2026-11-04 16:39:22.793[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数不是有效数值[0m
+[32m2026-11-04 16:39:22.803[0m | [33m[1mWARNING [0m | [36mreranking.py        [0m:[36mrerank_candidates[0m:[36m31  [0m - [33m[1m知识问答重排序失败，回退 RRF 顺序：ValueError: 重排序分数数量与候选数量不一致[0m
+[32m2026-11-04 16:39:22.812[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m227 [0m - [1mStep 3: 触发断崖截断 @ index=1 (Score 0.9400 -> 0.1000, Gap=0.8400)[0m
+[32m2026-11-04 16:39:22.822[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 2 条文档 (TopK=2)[0m
+[32m2026-11-04 16:39:22.832[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 1 条文档 (TopK=1)[0m
+[32m2026-11-04 16:39:22.843[0m | [1mINFO    [0m | [36mnode_rerank.py      [0m:[36mstep_3_topk    [0m:[36m234 [0m - [1mStep 3: 截断完成，保留前 3 条文档 (TopK=3)[0m
 test_changed_document_is_used (test.test_knowledge.KnowledgeTests.test_changed_document_is_used)
 替换原文后，答案和引用应随之变化。 ... ok
 test_citation_whitespace_uses_original_text (test.test_knowledge.KnowledgeTests.test_citation_whitespace_uses_original_text)
@@ -17,6 +24,10 @@ test_revises_citation_against_read_passage (test.test_knowledge.KnowledgeTests.t
 错误引用反馈给模型后，只接受逐字匹配的原文。 ... ok
 test_tool_failure_and_limit (test.test_knowledge.KnowledgeTests.test_tool_failure_and_limit)
 知识库故障和调用上限均应返回未完成。 ... ok
+test_chat_stream_rejects_empty_question (test.test_knowledge_web.KnowledgeWebTests.test_chat_stream_rejects_empty_question)
+无效输入在流开始之前返回明确错误。 ... ok
+test_chat_stream_reports_progress_and_final_answer (test.test_knowledge_web.KnowledgeWebTests.test_chat_stream_reports_progress_and_final_answer)
+SSE 问答返回工具阶段及经过校验的最终答案。 ... ok
 test_concurrent_updates_do_not_override_winner (test.test_knowledge_web.KnowledgeWebTests.test_concurrent_updates_do_not_override_winner)
 两个版本基于同一旧版本时，只允许先完成者发布。 ... ok
 test_failed_index_is_reported (test.test_knowledge_web.KnowledgeWebTests.test_failed_index_is_reported)
@@ -45,12 +56,52 @@ test_direct_search_overlaps_hyde_generation (test.test_knowledge_async.AsyncKnow
 两路工作交错执行且先固定版本快照。 ... ok
 test_import_creation_does_not_block_other_requests (test.test_knowledge_async.AsyncKnowledgeTests.test_import_creation_does_not_block_other_requests)
 创建任务等待数据库时，事件循环仍能响应其他请求。 ... ok
+test_async_rewrite_and_failure (test.test_query_rewrite.AsyncQueryRewriteTests.test_async_rewrite_and_failure)
+异步改写成功和失败时均传递正确问题及历史。 ... ok
+test_clarification_becomes_standalone_question (test.test_query_rewrite.QueryRewriteTests.test_clarification_becomes_standalone_question)
+用户只回答产品名时，Agent 接收结合原需求的改写问题。 ... ok
+test_failure_falls_back_without_losing_history (test.test_query_rewrite.QueryRewriteTests.test_failure_falls_back_without_losing_history)
+改写失败时保留原问题及历史，仍可继续决策。 ... ok
+test_no_history_skips_rewrite (test.test_query_rewrite.QueryRewriteTests.test_no_history_skips_rewrite)
+首次提问不增加模型调用。 ... ok
+test_rewrite_history_is_bounded_and_invalid_output_rejected (test.test_query_rewrite.QueryRewriteTests.test_rewrite_history_is_bounded_and_invalid_output_rejected)
+改写请求仅使用最近六条消息，并拒绝空结果。 ... ok
+test_dictionary_hit_extracts_nested_entity (test.test_milvus_result_normalization.MilvusResultNormalizationTests.test_dictionary_hit_extracts_nested_entity)
+包含嵌套 entity 的 Hit 应保留文档 ID、版本及片段。 ... ok
+test_dictionary_hit_preserves_outer_primary_key (test.test_milvus_result_normalization.MilvusResultNormalizationTests.test_dictionary_hit_preserves_outer_primary_key)
+片段主键只在外层时也能用于后续读取。 ... ok
+test_search_filter_requires_metadata_fields (test.test_milvus_result_normalization.MilvusResultNormalizationTests.test_search_filter_requires_metadata_fields)
+旧切片缺少动态字段时，过滤表达式必须显式检查存在性。 ... ok
+test_late_subscriber_and_failed_task (test.test_task_events.TaskEventTests.test_late_subscriber_and_failed_task)
+任务在连接前已失败时，首次快照包含错误并结束。 ... ok
+test_multiple_subscribers_and_disconnect (test.test_task_events.TaskEventTests.test_multiple_subscribers_and_disconnect)
+同一任务两个连接独立接收通知，断开时释放订阅。 ... ok
+test_updates_and_terminal_state_from_thread (test.test_task_events.TaskEventTests.test_updates_and_terminal_state_from_thread)
+订阅后状态由后台线程更新，结束事件后自动释放订阅。 ... ok
+test_completed_task_and_missing_task (test.test_task_events.TaskEventsApiTests.test_completed_task_and_missing_task)
+连接已完成的任务立即返回最终事件；未知任务返回 404。 ... ok
+test_async_search_uses_reranked_candidates (test.test_knowledge_reranking.AsyncKnowledgeRerankingTests.test_async_search_uses_reranked_candidates)
+异步双路召回同样在工作线程执行重排。 ... ok
+test_failure_and_invalid_scores_fall_back_to_rrf (test.test_knowledge_reranking.KnowledgeRerankingTests.test_failure_and_invalid_scores_fall_back_to_rrf)
+模型失败或分数异常时保留 RRF 候选顺序。 ... ok
+test_full_text_is_scored_and_old_topk_policy_is_used (test.test_knowledge_reranking.KnowledgeRerankingTests.test_full_text_is_scored_and_old_topk_policy_is_used)
+使用完整原文评分，按旧断崖阈值截断并保留版本字段。 ... ok
+test_single_score_and_equal_scores (test.test_knowledge_reranking.KnowledgeRerankingTests.test_single_score_and_equal_scores)
+单候选标量得分和无断崖的候选均正常保留。 ... ok
+test_sync_search_uses_reranked_candidates (test.test_knowledge_reranking.KnowledgeRerankingTests.test_sync_search_uses_reranked_candidates)
+同步双路召回后使用重排顺序且保留原始文档信息。 ... ok
+test_async_returns_full_text_without_evidence (test.test_full_chunk_search.AsyncFullChunkSearchTests.test_async_returns_full_text_without_evidence)
+异步搜索返回全文，读取动作才登记证据。 ... ok
+test_search_returns_full_text_but_does_not_register_evidence (test.test_full_chunk_search.FullChunkSearchTests.test_search_returns_full_text_but_does_not_register_evidence)
+搜索可看到 160 字之后的内容，但不能直接引用。 ... ok
+test_search_then_read_allows_verified_quote (test.test_full_chunk_search.FullChunkSearchTests.test_search_then_read_allows_verified_quote)
+模型依据完整候选选择读取，读取后的引用可通过校验。 ... ok
 
 ----------------------------------------------------------------------
-Ran 22 tests in 12.196s
+Ran 44 tests in 14.292s
 
 OK
-Exception ignored in: <function ResourceTracker.__del__ at 0x0000025041982C00>
+Exception ignored in: <function ResourceTracker.__del__ at 0x000001F790720E00>
 Traceback (most recent call last):
   File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 80, in __del__
   File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 89, in _stop

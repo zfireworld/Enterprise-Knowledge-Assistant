@@ -1,5 +1,5 @@
 from app.utils.task_utils import *
-from app.lm.reranker_utils import get_reranker_model
+from app.lm.reranker_utils import rank_pairs
 from app.core.logger import logger
 import sys
 
@@ -127,8 +127,6 @@ def step_2_rerank_docs(state, doc_items):
     # 初始化重排序模型（这里以使用 BGE 重排序模型为例）
     texts = [x["text"] for x in doc_items]
     try:
-        reranker = get_reranker_model()
-
         # 构建查询-文档对（必须是 str）
         """
            格式：列表，每个元素是二元元组 / 列表，严格遵循 (query, passage) 顺序（即你的「问题、答案」）：
@@ -153,7 +151,7 @@ def step_2_rerank_docs(state, doc_items):
         sentence_pairs = [[question, t] for t in texts]
         # 计算相关性得分
         logger.info("Step 2: 正在计算相关性得分...")
-        scores = reranker.compute_score(sentence_pairs)
+        scores = rank_pairs(sentence_pairs)
         # 将得分与文档配对并排序（按 score 降序）
         scored_docs = []
         for item, text, score in zip(doc_items, texts, scores):

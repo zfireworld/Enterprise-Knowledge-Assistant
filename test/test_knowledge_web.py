@@ -1,5 +1,6 @@
 """验证页面 API 与导入、查询的集成。"""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -118,6 +119,26 @@ class KnowledgeWebTests(unittest.TestCase):
         """拒绝不支持的文件格式。"""
         response = self.client.post("/api/import", files={"file": ("test.exe", b"x")},
                                     data={"version_date": "2026-01-01"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_chat_stream_reports_progress_and_final_answer(self) -> None:
+        """SSE 问答返回工具阶段及经过校验的最终答案。"""
+        self.client.post("/api/import", files={"file": ("规则.txt", "设备借用期限为七天。".encode())},
+                         data={"version_date": "2026-01-01"})
+        response = self.client.post("/api/chat/stream", json={"question": "设备借用几天？", "model": "mock"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.headers["content-type"].startswith("text/event-stream"))
+        events = [frame for frame in response.text.split("\n\n") if frame.startswith("event:")]
+        self.assertTrue(any('"action": "search_documents"' in frame for frame in events))
+        self.assertTrue(any('"action": "read_passage"' in frame for frame in events))
+        final = next(frame for frame in events if frame.startswith("event: final"))
+        result = json.loads(next(line[6:] for line in final.splitlines() if line.startswith("data: ")))
+        self.assertEqual(result["status"], "completed")
+        self.assertIn("七天", result["citations"][0]["quote"])
+
+    def test_chat_stream_rejects_empty_question(self) -> None:
+        """无效输入在流开始之前返回明确错误。"""
+        response = self.client.post("/api/chat/stream", json={"question": " ", "model": "mock"})
         self.assertEqual(response.status_code, 400)
 
     def test_failed_index_is_reported(self) -> None:

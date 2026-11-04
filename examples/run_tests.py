@@ -9,7 +9,9 @@ from pathlib import Path
 def main() -> None:
     """运行测试，记录退出码和输出；失败时以非零状态退出。"""
     root = Path(__file__).resolve().parents[1]
-    modules = ["test.test_knowledge", "test.test_knowledge_web", "test.test_knowledge_chunking", "test.test_knowledge_async"]
+    modules = ["test.test_knowledge", "test.test_knowledge_web", "test.test_knowledge_chunking",
+               "test.test_knowledge_async", "test.test_query_rewrite", "test.test_milvus_result_normalization",
+               "test.test_task_events", "test.test_knowledge_reranking", "test.test_full_chunk_search"]
     command = [sys.executable, "-m", "unittest", *modules, "-v"]
     environment = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     result = subprocess.run(command, cwd=root, env=environment, capture_output=True, text=True, encoding="utf-8", errors="replace")

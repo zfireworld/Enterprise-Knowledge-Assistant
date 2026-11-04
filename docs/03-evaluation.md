@@ -9,7 +9,7 @@ uv run python -m examples.generate_examples
 uv run python -m examples.run_tests
 ```
 
-第一条命令实际运行七组离线案例，每个 JSON 包含问题、对话历史、资料路径、状态、回答、引用和完整工具轨迹。第二条命令执行回归测试并写入 `examples/test-results.txt`。本次结果是 **22 项通过、退出码 0**；退出时 `multiprocess` 依赖还输出了一条资源清理异常，原样保留在日志中。
+第一条命令实际运行七组离线案例，每个 JSON 包含问题、对话历史、资料路径、状态、回答、引用和完整工具轨迹。第二条命令执行回归测试并写入 `examples/test-results.txt`。本次结果是 **44 项通过、退出码 0**；退出时 `multiprocess` 依赖还输出了一条资源清理异常，原样保留在日志中。
 
 ## 验收点与实际结果
 
@@ -24,6 +24,8 @@ uv run python -m examples.run_tests
 | 替换资料 | 将 D03 改为联系服务台后重复原问题 | 回答、原文引用及版本日期发生变化，见 [changed_document.json](../examples/changed_document.json)，与 [normal.json](../examples/normal.json) 对照；动作仍是检索再读取 |
 
 替换案例使用 [knowledge_updated.json](../data/knowledge_updated.json)，原资料为 [knowledge.json](../data/knowledge.json)。测试还覆盖调用上限、拒绝未读取引用、版本切换、更新失败及异步并发；逐项结果见 [test-results.txt](../examples/test-results.txt)。
+
+单独使用本地 BGE Reranker 对三条合成资料评分时，30 天和 15 天的报销规定均被动态 Top-K 保留，充电资料被截断；该单次结果不能证明其他冲突问题不会被截断，也不是完整的 Milvus 与真实模型端到端评估。
 
 ## 真实模型记录及限制
 

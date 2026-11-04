@@ -253,8 +253,8 @@
             statusBadge.textContent = '处理中...';
             statusBadge.className = 'status-badge status-processing';
 
-            // 2. 轮询状态
-            pollStatus(taskId, itemEl);
+            // 2. 订阅后台任务状态
+            watchStatus(taskId, itemEl);
 
         } catch (error) {
             console.error(error);
@@ -312,37 +312,49 @@
         }
     }
 
-    function pollStatus(taskId, itemEl) {
+    function watchStatus(taskId, itemEl) {
         const statusBadge = itemEl.querySelector('.status-badge');
         const progressBar = itemEl.querySelector('.progress-bar');
-        
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch(`${API_BASE}/status/${taskId}`);
-                const data = await res.json();
-
-                // 渲染日志（done/running）
-                renderLogs(itemEl, data.done_list, data.running_list);
-                
-                if (data.status === 'completed') {
-                    statusBadge.textContent = '已完成';
-                    statusBadge.className = 'status-badge status-completed';
-                    updateProgressBar(progressBar, 100);
-                    clearInterval(interval);
-                } else if (data.status === 'processing') {
-                    // 保持处理中状态
-                    statusBadge.textContent = '处理中...';
-                    // 确保进度为30%
-                     updateProgressBar(progressBar, 30);
-                } else if (data.status === 'failed') {
-                    statusBadge.textContent = '失败';
-                    statusBadge.className = 'status-badge status-error';
-                    clearInterval(interval);
-                }
-            } catch (e) {
-                console.error('Polling error', e);
-            }
-        }, 2000); // 每2秒轮询一次
+        const base = `${API_BASE}/status/${encodeURIComponent(taskId)}`;
+        let source, retries = 0, finished = false, reconnectTimer;
+        const stop = (message, isError = false) => {
+            if (finished) return;
+            finished = true; source?.close(); clearTimeout(timeout); clearTimeout(reconnectTimer);
+            statusBadge.textContent = message;
+            statusBadge.className = `status-badge ${isError ? 'status-error' : 'status-completed'}`;
+            if (!isError) updateProgressBar(progressBar, 100);
+        };
+        const timeout = setTimeout(() => stop('进度等待超时，任务可能仍在后台运行', true), 30 * 60 * 1000);
+        const render = data => {
+            renderLogs(itemEl, data.done_list, data.running_list);
+            if (data.status === 'completed') return stop('已完成');
+            if (data.status === 'failed') return stop('失败', true);
+            if (!data.status) return stop('任务不存在或服务已重启', true);
+            statusBadge.textContent = '处理中...';
+            updateProgressBar(progressBar, 30);
+        };
+        const connect = () => {
+            if (finished) return;
+            source = new EventSource(`${base}/events`);
+            source.addEventListener('progress', event => {
+                try { render(JSON.parse(event.data)); }
+                catch (_) { stop('进度数据无效', true); }
+            });
+            source.addEventListener('missing', () => stop('任务不存在或服务已重启', true));
+            source.onerror = async () => {
+                source.close();
+                try {
+                    const response = await fetch(base);
+                    if (!response.ok) throw new Error('状态查询失败');
+                    render(await response.json());
+                    if (finished) return;
+                    if (++retries > 3) return stop('进度连接中断，任务可能仍在后台运行', true);
+                    statusBadge.textContent = '正在重新连接...';
+                    reconnectTimer = setTimeout(connect, 2000);
+                } catch (_) { stop('状态查询失败', true); }
+            };
+        };
+        connect();
     }
 </script>
 

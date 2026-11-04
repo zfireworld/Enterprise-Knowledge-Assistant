@@ -10,6 +10,10 @@
 .history-row { padding: 14px 0; border-top: 1px solid #e8ede8; }
 .history-row strong, .history-row small { display: block; }
 .history-row small { margin-top: 5px; color: #819087; }
+.trace-details { border-top: 1px solid #edf0ec; margin-top: 12px; padding-top: 10px; font-size: 11px; color: #647b6a; }
+.trace-details summary { cursor: pointer; color: #397958; }
+.trace-line { margin-top: 8px; line-height: 1.6; }
+.trace-error { color: #a1473c; }
 @media (min-width: 651px) and (max-height: 800px) {
   .welcome { margin-top: 16px; }
   .welcome h2 { margin: 12px 0 6px; }

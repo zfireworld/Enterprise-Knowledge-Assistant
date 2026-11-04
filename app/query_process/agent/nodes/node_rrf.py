@@ -23,7 +23,9 @@ def _as_entity_list(state_list) -> List[Dict[str, Any]]:
         # 情况A: doc 是 Pymilvus 的 Hit 对象 (具有 entity 属性)
         # Hit 对象结构通常是: id=xxx, distance=xxx, entity={field1: val1, ...}
         # 这里的 id 是 Milvus 内部的主键 ID (int64 或 str)
-        if hasattr(doc, "entity") and hasattr(doc, "id"):
+        # 部分 pymilvus 的 Hit 同时是 dict，其 entity 属性的 to_dict()
+        # 返回整个 Hit；优先走下面的字典分支才能取得嵌套的原文字段。
+        if not isinstance(doc, dict) and hasattr(doc, "entity") and hasattr(doc, "id"):
             # 1. 提取 entity 中的业务字段 (如 content, item_name, chunk_id 等)
             # 注意: doc.entity 可能是一个 Entity 对象，也可能直接是 dict
             entity_content = doc.entity
@@ -55,6 +57,8 @@ def _as_entity_list(state_list) -> List[Dict[str, Any]]:
                  if isinstance(ent, dict):
                      final_ent = ent.copy()
                  # 尝试从外层补充 id/score
+                 if "chunk_id" in doc and "chunk_id" not in final_ent:
+                     final_ent["chunk_id"] = doc["chunk_id"]
                  if "id" in doc and "id" not in final_ent:
                      final_ent["id"] = doc["id"]
                  if "distance" in doc:

@@ -2,7 +2,7 @@
 
 import asyncio
 import re
-from typing import Any
+from typing import Any, Callable
 
 from app.knowledge.model import DecisionModel
 from app.knowledge.tools import KnowledgeTools
@@ -19,6 +19,43 @@ class KnowledgeService:
 
     def ask(self, question: str, history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         """同步入口：处理问题和历史；异步调用方应使用 ask_async。"""
+        effective, rewrite = self._rewrite_question(question, history or [])
+        result = self._ask(effective, history)
+        result["query_rewrite"] = rewrite
+        return result
+
+    def _rewrite_question(self, question: str, history: list[dict[str, Any]]) -> tuple[str, dict[str, str]]:
+        """存在历史及改写能力时改写，失败保留原问题并记录状态。"""
+        rewrite = getattr(self.model, "rewrite", None)
+        if not question.strip() or not history or rewrite is None:
+            return question, {"original": question, "rewritten": question, "status": "skipped"}
+        try:
+            rewritten = rewrite(question, history)
+            if not isinstance(rewritten, str) or not rewritten.strip() or len(rewritten) > 2000:
+                raise ValueError("问题改写结果无效")
+            rewritten = rewritten.strip()
+            return rewritten, {"original": question, "rewritten": rewritten, "status": "completed"}
+        except Exception:
+            return question, {"original": question, "rewritten": question, "status": "failed"}
+
+    async def _rewrite_question_async(self, question: str, history: list[dict[str, Any]]) -> tuple[str, dict[str, str]]:
+        """优先异步改写问题；失败时使用原问题，供后续决策参考历史。"""
+        rewrite = getattr(self.model, "rewrite_async", None)
+        if not question.strip() or not history:
+            return question, {"original": question, "rewritten": question, "status": "skipped"}
+        if rewrite is None:
+            return await asyncio.to_thread(self._rewrite_question, question, history)
+        try:
+            rewritten = await rewrite(question, history)
+            if not isinstance(rewritten, str) or not rewritten.strip() or len(rewritten) > 2000:
+                raise ValueError("问题改写结果无效")
+            rewritten = rewritten.strip()
+            return rewritten, {"original": question, "rewritten": rewritten, "status": "completed"}
+        except Exception:
+            return question, {"original": question, "rewritten": question, "status": "failed"}
+
+    def _ask(self, question: str, history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        """同步执行决策与工具循环，返回答案和轨迹。"""
         if not question.strip():
             raise ValueError("问题不能为空")
         self.tools.evidence.clear()
@@ -46,8 +83,19 @@ class KnowledgeService:
                 return self._incomplete(f"模型或决策执行失败：{exc}", trace)
         return self._incomplete("达到工具调用上限", trace)
 
-    async def ask_async(self, question: str, history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    async def ask_async(self, question: str, history: list[dict[str, Any]] | None = None,
+                        on_progress: Callable[[dict[str, Any]], None] | None = None) -> dict[str, Any]:
         """异步处理问题和历史，返回答案、状态、引用及轨迹。"""
+        if on_progress and history:
+            on_progress({"stage": "rewrite", "message": "正在理解上下文…"})
+        effective, rewrite = await self._rewrite_question_async(question, history or [])
+        result = await self._ask_async(effective, history, on_progress)
+        result["query_rewrite"] = rewrite
+        return result
+
+    async def _ask_async(self, question: str, history: list[dict[str, Any]] | None = None,
+                         on_progress: Callable[[dict[str, Any]], None] | None = None) -> dict[str, Any]:
+        """异步执行决策与工具循环，返回答案和轨迹。"""
         if not question.strip():
             raise ValueError("问题不能为空")
         self.tools.evidence.clear()
@@ -61,6 +109,8 @@ class KnowledgeService:
                 if tool_calls >= self.max_calls and not budget_notified:
                     trace.append({"action": "budget_notice", "result": "工具调用额度已用完，请仅根据已读取原文结束；证据不足时说明缺口。"})
                     budget_notified = True
+                if on_progress:
+                    on_progress({"stage": "decide", "message": "正在分析资料并决定下一步…"})
                 decide_async = getattr(self.model, "decide_async", None)
                 if decide_async is not None:
                     decision = await decide_async(question, history or [], trace)
@@ -75,6 +125,10 @@ class KnowledgeService:
                     return result
                 if tool_calls >= self.max_calls:
                     break
+                if on_progress:
+                    action = decision.get("action")
+                    message = {"search_documents": "正在检索知识资料…", "read_passage": "正在核对资料原文…"}.get(action, "正在执行工具…")
+                    on_progress({"stage": "tool", "action": action, "message": message})
                 trace.append(await self._execute_async(decision))
                 tool_calls += 1
             except Exception as exc:

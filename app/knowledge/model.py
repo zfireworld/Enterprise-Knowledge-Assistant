@@ -25,6 +25,17 @@ class LangChainDecisionModel:
         response = self.client.invoke(self._messages(question, history, trace))
         return json.loads(response.content)
 
+    def rewrite(self, question: str, history: list[dict[str, Any]]) -> str:
+        """结合最近历史同步改写问题；模型或格式错误向上传递。"""
+        from app.knowledge.query_rewrite import parse_rewrite, rewrite_messages
+        return parse_rewrite(self.client.invoke(rewrite_messages(question, history)).content)
+
+    async def rewrite_async(self, question: str, history: list[dict[str, Any]]) -> str:
+        """结合最近历史异步改写问题；模型或格式错误向上传递。"""
+        from app.knowledge.query_rewrite import parse_rewrite, rewrite_messages
+        response = await self.client.ainvoke(rewrite_messages(question, history))
+        return parse_rewrite(response.content)
+
     async def decide_async(self, question: str, history: list[dict[str, Any]], trace: list[dict[str, Any]]) -> dict[str, Any]:
         """异步调用模型；无效 JSON 或请求错误向上传递。"""
         response = await self.client.ainvoke(self._messages(question, history, trace))
@@ -39,7 +50,9 @@ class LangChainDecisionModel:
             "或{\"action\":\"finish\",\"status\":\"completed|needs_clarification|insufficient|incomplete\","
             "\"answer\":\"回答\",\"missing_information\":\"缺口\",\"citations\":[{\"doc_id\":\"ID\","
             "\"chunk_id\":\"ID\",\"quote\":\"原文子串\"}],\"reason\":\"依据\"}。"
-            "先搜索并读取相关原文。发现可能冲突时搜索并读取各方，缺少优先级时说明冲突并追问。"
+            "搜索结果含完整候选片段，可用于判断相关性；搜索本身不会登记引用证据。"
+            "引用任何片段前，必须先对该文档 ID 和片段 ID 调用 read_passage 核对原文。"
+            "发现可能冲突时搜索并读取各方，缺少优先级时说明冲突并追问。"
             "不得根据日期新旧、检索排名或一般惯例推断哪份制度优先，也不得暗示某一规则更可能适用；"
             "只有原文明确规定优先级或适用范围才能引用该依据作判断。"
             "引用必须从 read_passage 的 text 中逐字复制连续原文，保留标点空格，不得改写或拼接；"

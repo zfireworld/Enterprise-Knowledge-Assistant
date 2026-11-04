@@ -6,6 +6,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from app.knowledge.domain import Passage
+from app.knowledge.reranking import rerank_candidates
 
 if TYPE_CHECKING:
     from app.knowledge.version_repository import VersionRepository
@@ -58,7 +59,9 @@ class MilvusRepository:
         branches = [f"({legacy})"]
         for doc_id, version_id in active:
             branches.append(f'(doc_id == {json.dumps(doc_id)} and version_id == {json.dumps(version_id)})')
-        return 'doc_id != "" and version_date != "" and (' + " or ".join(branches) + ")"
+        # 动态字段缺失时，仅用 != 空字符串不足以可靠排除旧记录。
+        required = '(exists $meta["doc_id"]) and (exists $meta["version_date"])'
+        return required + ' and doc_id != "" and version_date != "" and (' + " or ".join(branches) + ")"
 
     def _search(self, text: str) -> list[dict[str, Any]]:
         """以 text 执行稠密和稀疏混合检索；服务异常向上传递。"""
@@ -82,7 +85,8 @@ class MilvusRepository:
         hypothetical = step_1_create_hyde_doc(query)
         hyde = self._search(f"{query} {hypothetical}")
         merged = reciprocal_rank_fusion([(direct, 1.0), (hyde, 1.0)], max_results=10)
-        return [self._passage(item) for item, _ in merged]
+        ranked = rerank_candidates(query, [item for item, _ in merged])
+        return [self._passage(item) for item in ranked]
 
     async def search_async(self, query: str) -> list[Passage]:
         """并发执行普通召回和 HyDE 生成，再合并两路检索结果。"""
@@ -94,7 +98,8 @@ class MilvusRepository:
         )
         hyde = await asyncio.to_thread(self._search, f"{query} {hypothetical}")
         merged = await asyncio.to_thread(_merge_results, direct, hyde)
-        return [self._passage(item) for item, _ in merged]
+        ranked = await asyncio.to_thread(rerank_candidates, query, [item for item, _ in merged])
+        return [self._passage(item) for item in ranked]
 
     def read(self, doc_id: str, chunk_id: str) -> Passage:
         """按 Milvus 主键读取并验证文档归属；缺失时抛出 LookupError。"""
@@ -124,7 +129,8 @@ class MilvusRepository:
         if not self.client.has_collection(collection_name=self.collection):
             return []
         records = self.client.query(collection_name=self.collection,
-            filter='chunk_id >= 0 and doc_id != "" and version_date != "" and not exists $meta["version_id"]',
+            filter='chunk_id >= 0 and (exists $meta["doc_id"]) and (exists $meta["version_date"]) '
+                   'and doc_id != "" and version_date != "" and not exists $meta["version_id"]',
             limit=1000, output_fields=["doc_id", "version_date", "title"])
         documents: dict[str, dict[str, Any]] = {}
         for item in records:

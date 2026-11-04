@@ -1,5 +1,6 @@
 from typing import Dict, List
 from .sse_utils import push_to_session
+from .task_events import task_events
 
 # ---------------------------
 # 内存态任务追踪（单进程）
@@ -79,6 +80,8 @@ def add_running_task(task_id: str, node_name: str, is_stream: bool = False) -> N
     if node_name not in running:
         running.append(node_name)
 
+    task_events.notify(task_id)
+
     if is_stream:
         task_push_queue(task_id)
 
@@ -103,6 +106,8 @@ def add_done_task(task_id: str, node_name: str, is_stream: bool = False) -> None
     done = _tasks_done_list[task_id]
     if node_name not in done:
         done.append(node_name)
+
+    task_events.notify(task_id)
 
     if is_stream:
         task_push_queue(task_id)
@@ -167,6 +172,7 @@ def update_task_status(task_id: str, status_name: str, push_queue: bool = False)
     - status_name: 状态名称（字符串）
     """
     _tasks_status[task_id] = status_name
+    task_events.notify(task_id)
     if push_queue:
         task_push_queue(task_id)
 
@@ -185,3 +191,4 @@ def clear_task(task_id: str):
     _tasks_done_list.pop(task_id, None)
     _tasks_status.pop(task_id, None)
     _tasks_result.pop(task_id, None)
+    task_events.notify(task_id)

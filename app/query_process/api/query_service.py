@@ -1,3 +1,5 @@
+import asyncio
+from collections.abc import AsyncIterator
 from pathlib import Path
 import uuid
 import uvicorn
@@ -53,6 +55,21 @@ async def health():
     检查服务是否正常
     """
     return {"ok": True}
+
+
+async def _health_stream() -> AsyncIterator[str]:
+    """维持服务连接并定期发送心跳，断开时由框架取消生成器。"""
+    yield 'event: ready\ndata: {"ok":true}\n\n'
+    while True:
+        await asyncio.sleep(15)
+        yield ': heartbeat\n\n'
+
+
+@app.get("/health/events")
+async def health_events() -> StreamingResponse:
+    """通过 SSE 提供服务连接状态，保留原健康检查接口。"""
+    return StreamingResponse(_health_stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # 定义查询接口
