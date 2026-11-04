@@ -1,0 +1,63 @@
+{
+  "mode": "offline_mock_local_repository",
+  "input": {
+    "question": "有几天？",
+    "history": [
+      {
+        "role": "user",
+        "content": "年假怎么规定？"
+      }
+    ],
+    "data": "data/knowledge.json"
+  },
+  "output": {
+    "status": "completed",
+    "answer": "符合条件的员工每年可享受5天年假。",
+    "citations": [
+      {
+        "doc_id": "D04",
+        "chunk_id": "D04-1",
+        "quote": "符合条件的员工每年可享受5天年假。",
+        "version_date": "2025-01-01",
+        "version_id": ""
+      }
+    ],
+    "missing_information": "",
+    "trace": [
+      {
+        "action": "search_documents",
+        "reason": "查找相关资料",
+        "arguments": {
+          "query": "年假怎么规定？ 有几天？"
+        },
+        "result": [
+          {
+            "doc_id": "D04",
+            "version_date": "2025-01-01",
+            "chunk_id": "D04-1",
+            "title": "年假制度",
+            "text": "符合条件的员工每年可享受5天年假。",
+            "version_id": ""
+          }
+        ]
+      },
+      {
+        "action": "read_passage",
+        "reason": "核对候选原文",
+        "arguments": {
+          "doc_id": "D04",
+          "chunk_id": "D04-1"
+        },
+        "result": {
+          "doc_id": "D04",
+          "version_date": "2025-01-01",
+          "chunk_id": "D04-1",
+          "title": "年假制度",
+          "text": "符合条件的员工每年可享受5天年假。",
+          "version_id": ""
+        }
+      }
+    ],
+    "decision_reason": "已有原文依据"
+  }
+}

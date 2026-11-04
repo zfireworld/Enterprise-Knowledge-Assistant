@@ -33,23 +33,21 @@ def convert_pdf_locally(pdf: Path, output_dir: Path) -> Path:
     env["PYTHONUTF8"] = "1"
     start = time.monotonic()
     logger.info(f"开始本地 MinerU 解析：{pdf}")
-    try:
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, encoding="utf-8", errors="replace", env=env,
-        )
-    except FileNotFoundError as exc:
-        raise RuntimeError(
-            "未找到 mineru 命令；请安装本地 MinerU 或设置 MINERU_EXECUTABLE。"
-        ) from exc
-
-    if process.stdout is not None:
-        for line in process.stdout:
-            logger.info(f"[MinerU] {line.rstrip()}")
-        process.stdout.close()
-    return_code = process.wait()
+    log_path = output_dir / f"{pdf.stem}.mineru.log"
+    # MinerU 子进程可能继承 stdout；等待管道 EOF 会被遗留进程无限阻塞。
+    with log_path.open("w", encoding="utf-8") as log_file:
+        try:
+            process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, env=env)
+        except FileNotFoundError as exc:
+            raise RuntimeError("未找到 mineru 命令；请安装本地 MinerU 或设置 MINERU_EXECUTABLE。") from exc
+        try:
+            return_code = process.wait(timeout=1800)
+        except subprocess.TimeoutExpired as exc:
+            process.kill()
+            process.wait()
+            raise TimeoutError(f"MinerU 解析超时，日志：{log_path}") from exc
     if return_code != 0:
-        raise RuntimeError(f"本地 MinerU 解析失败，退出码：{return_code}")
+        raise RuntimeError(f"本地 MinerU 解析失败，退出码：{return_code}，日志：{log_path}")
 
     md_path = output_dir / pdf.stem / "auto" / f"{pdf.stem}.md"
     if not md_path.is_file():

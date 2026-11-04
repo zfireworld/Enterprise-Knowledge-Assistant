@@ -1,4 +1,4 @@
-import io
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,7 +20,6 @@ class PdfToMarkdownTests(unittest.TestCase):
             with patch("app.import_process.agent.nodes.node_pdf_to_md.subprocess.Popen") as popen, \
                  patch("app.import_process.agent.nodes.node_pdf_to_md.add_running_task"), \
                  patch("app.import_process.agent.nodes.node_pdf_to_md.add_done_task"):
-                popen.return_value.stdout = io.StringIO("done\n")
                 popen.return_value.wait.return_value = 0
                 result = node_pdf_to_md(state)
                 self.assertEqual(result["md_content"], "# 内容")
@@ -37,11 +36,24 @@ class PdfToMarkdownTests(unittest.TestCase):
                  patch("app.import_process.agent.nodes.node_pdf_to_md.add_running_task"), \
                  patch("app.import_process.agent.nodes.node_pdf_to_md.add_done_task") as done, \
                  patch("app.import_process.agent.nodes.node_pdf_to_md.logger.exception"):
-                popen.return_value.stdout = io.StringIO("failure\n")
                 popen.return_value.wait.return_value = 1
                 with self.assertRaisesRegex(RuntimeError, "退出码：1"):
                     node_pdf_to_md(state)
                 done.assert_not_called()
+
+    def test_timeout_stops_the_process(self):
+        """解析进程超时后必须终止并返回明确错误。"""
+        with tempfile.TemporaryDirectory() as temp:
+            pdf = Path(temp) / "sample.pdf"
+            pdf.write_bytes(b"%PDF-test")
+            state = {"task_id": "test", "pdf_path": str(pdf), "local_dir": temp}
+            with patch("app.import_process.agent.nodes.node_pdf_to_md.subprocess.Popen") as popen, \
+                 patch("app.import_process.agent.nodes.node_pdf_to_md.add_running_task"), \
+                 patch("app.import_process.agent.nodes.node_pdf_to_md.logger.exception"):
+                popen.return_value.wait.side_effect = [subprocess.TimeoutExpired("mineru", 1800), 0]
+                with self.assertRaises(TimeoutError):
+                    node_pdf_to_md(state)
+                popen.return_value.kill.assert_called_once()
 
 
 if __name__ == "__main__":

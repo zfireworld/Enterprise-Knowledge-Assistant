@@ -1,7 +1,9 @@
 {
+  "mode": "offline_mock_local_repository",
   "input": {
     "question": "公司停车位收费吗？",
-    "data": "data\\knowledge.json"
+    "history": [],
+    "data": "data/knowledge.json"
   },
   "output": {
     "status": "insufficient",

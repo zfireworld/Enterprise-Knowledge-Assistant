@@ -13,6 +13,7 @@ class Passage:
     chunk_id: str
     title: str
     text: str
+    version_id: str = ""
 
 
 class Repository(Protocol):

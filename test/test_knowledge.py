@@ -68,6 +68,32 @@ class KnowledgeTests(unittest.TestCase):
 
         result = KnowledgeService(UntrustedModel(), KnowledgeTools(LocalRepository(self.path))).ask("报销多久？")
         self.assertEqual(result["status"], "incomplete")
+        self.assertEqual(sum(item["action"] == "citation_validation" for item in result["trace"]), 2)
+
+    def test_revises_citation_against_read_passage(self) -> None:
+        """错误引用反馈给模型后，只接受逐字匹配的原文。"""
+        class CorrectingModel:
+            """先返回错误引用，再根据校验反馈修正。"""
+
+            def decide(self, question: str, history: list, trace: list) -> dict:
+                """根据轨迹模拟读取、错误引用和修正。"""
+                if not trace:
+                    return {"action": "read_passage", "doc_id": "D03", "chunk_id": "D03-1"}
+                quote = "内部账号平台" if any(item["action"] == "citation_validation" for item in trace) else "内部平台"
+                return {"action": "finish", "status": "completed", "answer": "通过内部账号平台重置。",
+                        "citations": [{"doc_id": "D03", "chunk_id": "D03-1", "quote": quote}]}
+
+        result = KnowledgeService(CorrectingModel(), KnowledgeTools(LocalRepository(self.path)), 1).ask("如何重置密码？")
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["citations"][0]["quote"], "内部账号平台")
+        self.assertEqual([item["action"] for item in result["trace"]], ["read_passage", "budget_notice", "citation_validation"])
+        self.assertEqual(result["trace"][-1]["problems"][0]["reason"], "引用文字不是该片段中的连续原文")
+
+    def test_citation_whitespace_uses_original_text(self) -> None:
+        """空白差异可匹配，但返回的引用必须取自源文本。"""
+        source = "操作步骤：\n\n装入烫金膜。"
+        self.assertEqual(self.service._match_quote("操作步骤： 装入烫金膜。", source), source)
+        self.assertEqual(self.service._match_quote("操作步骤： 装入纸张。", source), "")
 
 
 if __name__ == "__main__":

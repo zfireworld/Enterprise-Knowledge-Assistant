@@ -76,7 +76,11 @@ function renderDocuments() {
   const body = byId('documents-body'); body.replaceChildren();
   for (const doc of docs) {
     const row = document.createElement('tr');
-    for (const value of [doc.title, doc.doc_id, doc.version_date, `${doc.chunks} 个`, '● 可检索']) row.append(el('td', '', value));
+    for (const value of [doc.title, doc.doc_id, `V${doc.version_number || 1} · ${doc.version_date}`, `${doc.chunks} 个`, '● 可检索']) row.append(el('td', '', value));
+    const actions = el('div', 'document-actions', '');
+    const update = el('button', 'text-button', '更新版本'); update.addEventListener('click', () => openImport(doc.doc_id));
+    const history = el('button', 'text-button', '版本历史'); history.addEventListener('click', () => showVersions(doc.doc_id));
+    actions.append(update, history); row.firstChild.append(actions);
     body.append(row);
   }
   byId('empty-docs').classList.toggle('hidden', docs.length > 0);
@@ -96,8 +100,12 @@ async function refreshDocuments() {
   }
 }
 
-function openImport() {
+function openImport(docId = '') {
   byId('import-form').reset();
+  const select = byId('target-doc');
+  select.replaceChildren(new Option('新建文档（V1）', ''));
+  for (const doc of state.documents) select.add(new Option(`更新：${doc.title}（当前 V${doc.version_number || 1}）`, doc.doc_id));
+  select.value = docId;
   const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   byId('version-date').value = now.toISOString().slice(0, 10);
   byId('file-label').textContent = '点击选择或拖拽文件到这里';
@@ -106,13 +114,32 @@ function openImport() {
   byId('import-dialog').showModal();
 }
 
+async function showVersions(docId) {
+  const dialog = byId('history-dialog'), list = byId('history-list');
+  list.replaceChildren(el('p', 'answer-status', '正在读取版本…'));
+  dialog.showModal();
+  try {
+    const data = await request(`/api/documents/${encodeURIComponent(docId)}/versions`);
+    byId('history-title').textContent = `${data.title} · 版本历史`;
+    list.replaceChildren();
+    for (const version of [...data.versions].reverse()) {
+      const row = el('div', 'history-row', '');
+      const label = version.version_id === data.current_version ? '当前版本' : ({published: '历史版本', processing: '处理中', failed: '导入失败'}[version.status] || version.status);
+      row.append(el('strong', '', `V${version.number} · ${label}`));
+      row.append(el('small', '', `${version.version_date} · ${version.chunks || 0} 个片段`));
+      if (version.error) row.append(el('small', 'import-feedback error', version.error));
+      list.append(row);
+    }
+  } catch (error) { list.replaceChildren(el('p', 'import-feedback error', error.message)); }
+}
+
 async function pollImport(id) {
   for (;;) {
     await new Promise(resolve => setTimeout(resolve, 1500));
     const task = await request(`/api/import/${encodeURIComponent(id)}`);
     if (task.status === 'completed') return task;
     if (task.status === 'failed') throw new Error(task.error || '导入失败');
-    byId('import-feedback').textContent = '正在解析文档并建立向量索引，请稍候…';
+    byId('import-feedback').textContent = `${task.step || '正在处理文档'}${task.chunks ? `（${task.chunks} 个片段）` : ''}，请稍候…`;
   }
 }
 
@@ -121,7 +148,8 @@ document.querySelectorAll('[data-prompt]').forEach(node => node.addEventListener
 byId('chat-form').addEventListener('submit', event => { event.preventDefault(); const field = byId('question'); const text = field.value.trim(); if (text) { field.value = ''; sendQuestion(text); } });
 byId('question').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); byId('chat-form').requestSubmit(); } });
 byId('new-chat').addEventListener('click', () => { if (state.busy) return; state.history = []; document.querySelectorAll('.message').forEach(node => node.remove()); byId('welcome').classList.remove('hidden'); });
-for (const id of ['open-import', 'open-import-side']) byId(id).addEventListener('click', openImport);
+for (const id of ['open-import', 'open-import-side']) byId(id).addEventListener('click', () => openImport());
+byId('close-history').addEventListener('click', () => byId('history-dialog').close());
 for (const id of ['close-import', 'cancel-import']) byId(id).addEventListener('click', () => { if (!byId('submit-import').disabled) byId('import-dialog').close(); });
 byId('import-dialog').addEventListener('cancel', event => { if (byId('submit-import').disabled) event.preventDefault(); });
 byId('file-input').addEventListener('change', event => { byId('file-label').textContent = event.target.files[0]?.name || '点击选择或拖拽文件到这里'; });
@@ -133,11 +161,12 @@ byId('import-form').addEventListener('submit', async event => {
   event.preventDefault();
   const button = byId('submit-import'), feedback = byId('import-feedback');
   const form = new FormData(); form.append('file', byId('file-input').files[0]); form.append('version_date', byId('version-date').value);
+  if (byId('target-doc').value) form.append('doc_id', byId('target-doc').value);
   button.disabled = true; feedback.classList.remove('error'); feedback.textContent = '正在上传文件…';
   try {
     const task = await request('/api/import', { method: 'POST', body: form });
     const result = await pollImport(task.id);
-    feedback.textContent = `导入成功：${result.chunks} 个片段。`;
+    feedback.textContent = `V${result.version_number} 导入成功：${result.chunks} 个片段。`;
     await refreshDocuments();
     setTimeout(() => byId('import-dialog').close(), 800);
   } catch (error) { feedback.classList.add('error'); feedback.textContent = `导入失败：${error.message}`; }

@@ -1,17 +1,58 @@
+Command: python -m unittest test.test_knowledge test.test_knowledge_web test.test_knowledge_chunking test.test_knowledge_async -v
+Exit code: 0
+
 test_changed_document_is_used (test.test_knowledge.KnowledgeTests.test_changed_document_is_used)
-�滻ԭ�ĺ󣬴𰸺�����Ӧ��֮�仯�� ... ok
+替换原文后，答案和引用应随之变化。 ... ok
+test_citation_whitespace_uses_original_text (test.test_knowledge.KnowledgeTests.test_citation_whitespace_uses_original_text)
+空白差异可匹配，但返回的引用必须取自源文本。 ... ok
 test_conflict (test.test_knowledge.KnowledgeTests.test_conflict)
-��ͻӦ����˫����������塣 ... ok
+冲突应引用双方并请求澄清。 ... ok
 test_missing_and_history (test.test_knowledge.KnowledgeTests.test_missing_and_history)
-��������������ʷ׷�ʷ��ز�ͬ״̬�� ... ok
+资料外问题与历史追问返回不同状态。 ... ok
 test_normal_and_rewrite (test.test_knowledge.KnowledgeTests.test_normal_and_rewrite)
-��������Ӧ����ͬһ�ĵ���ԭ�ġ� ... ok
+相似问题应返回同一文档的原文。 ... ok
 test_rejects_unread_citation (test.test_knowledge.KnowledgeTests.test_rejects_unread_citation)
-û�ж�ȡԭ��ʱ�����ܽ���ģ���鹹�����á� ... ok
+没有读取原文时，不能接受模型虚构的引用。 ... ok
+test_revises_citation_against_read_passage (test.test_knowledge.KnowledgeTests.test_revises_citation_against_read_passage)
+错误引用反馈给模型后，只接受逐字匹配的原文。 ... ok
 test_tool_failure_and_limit (test.test_knowledge.KnowledgeTests.test_tool_failure_and_limit)
-֪ʶ����Ϻ͵������޾�Ӧ����δ��ɡ� ... ok
+知识库故障和调用上限均应返回未完成。 ... ok
+test_concurrent_updates_do_not_override_winner (test.test_knowledge_web.KnowledgeWebTests.test_concurrent_updates_do_not_override_winner)
+两个版本基于同一旧版本时，只允许先完成者发布。 ... ok
+test_failed_index_is_reported (test.test_knowledge_web.KnowledgeWebTests.test_failed_index_is_reported)
+向量入库异常时，导入任务必须显示失败。 ... ok
+test_failed_update_preserves_current (test.test_knowledge_web.KnowledgeWebTests.test_failed_update_preserves_current)
+更新入库失败时，原版本仍可查询。 ... ok
+test_import_then_chat (test.test_knowledge_web.KnowledgeWebTests.test_import_then_chat)
+上传文档后可查询到其原文和版本。 ... ok
+test_invalid_file (test.test_knowledge_web.KnowledgeWebTests.test_invalid_file)
+拒绝不支持的文件格式。 ... ok
+test_repository_failure (test.test_knowledge_web.KnowledgeWebTests.test_repository_failure)
+知识库连接失败时返回明确的服务错误。 ... ok
+test_update_keeps_document_id_and_selects_new_version (test.test_knowledge_web.KnowledgeWebTests.test_update_keeps_document_id_and_selects_new_version)
+更新后查询新内容，历史版本仍保留。 ... ok
+test_import_keeps_document_metadata (test.test_knowledge_chunking.KnowledgeChunkingTests.test_import_keeps_document_metadata)
+导入后每个片段保留同一文档 ID 和版本日期。 ... ok
+test_long_unbroken_text_overlaps_at_boundary (test.test_knowledge_chunking.KnowledgeChunkingTests.test_long_unbroken_text_overlaps_at_boundary)
+连续长文本的相邻片段应共享边界上下文。 ... ok
+test_sentence_boundaries_keep_original_text (test.test_knowledge_chunking.KnowledgeChunkingTests.test_sentence_boundaries_keep_original_text)
+长度允许时，句子应保持完整且内容来自原文。 ... ok
+test_async_answer_matches_sync_answer (test.test_knowledge_async.AsyncKnowledgeTests.test_async_answer_matches_sync_answer)
+异步决策循环保留冲突证据及状态。 ... ok
+test_async_model_is_awaited (test.test_knowledge_async.AsyncKnowledgeTests.test_async_model_is_awaited)
+模型提供异步接口时，问答使用该接口而不是同步调用。 ... ok
+test_direct_search_overlaps_hyde_generation (test.test_knowledge_async.AsyncKnowledgeTests.test_direct_search_overlaps_hyde_generation)
+两路工作交错执行且先固定版本快照。 ... ok
+test_import_creation_does_not_block_other_requests (test.test_knowledge_async.AsyncKnowledgeTests.test_import_creation_does_not_block_other_requests)
+创建任务等待数据库时，事件循环仍能响应其他请求。 ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 0.011s
+Ran 22 tests in 12.196s
 
 OK
+Exception ignored in: <function ResourceTracker.__del__ at 0x0000025041982C00>
+Traceback (most recent call last):
+  File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 80, in __del__
+  File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 89, in _stop
+  File "<repository>\.venv\Lib\site-packages\multiprocess\resource_tracker.py", line 102, in _stop_locked
+AttributeError: '_thread.RLock' object has no attribute '_recursion_count'

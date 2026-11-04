@@ -22,6 +22,16 @@ class LangChainDecisionModel:
 
     def decide(self, question: str, history: list[dict[str, Any]], trace: list[dict[str, Any]]) -> dict[str, Any]:
         """调用模型选择下一动作；无效 JSON 或模型异常向上传递。"""
+        response = self.client.invoke(self._messages(question, history, trace))
+        return json.loads(response.content)
+
+    async def decide_async(self, question: str, history: list[dict[str, Any]], trace: list[dict[str, Any]]) -> dict[str, Any]:
+        """异步调用模型；无效 JSON 或请求错误向上传递。"""
+        response = await self.client.ainvoke(self._messages(question, history, trace))
+        return json.loads(response.content)
+
+    def _messages(self, question: str, history: list[dict[str, Any]], trace: list[dict[str, Any]]) -> list[tuple[str, str]]:
+        """为同步和异步调用生成相同的决策提示。"""
         prompt = (
             "你是企业知识问答助手。根据问题、历史和工具结果选择下一步，输出一个JSON对象。"
             "动作格式：{\"action\":\"search_documents\",\"query\":\"检索词\",\"reason\":\"简短依据\"}；"
@@ -32,8 +42,10 @@ class LangChainDecisionModel:
             "先搜索并读取相关原文。发现可能冲突时搜索并读取各方，缺少优先级时说明冲突并追问。"
             "不得根据日期新旧、检索排名或一般惯例推断哪份制度优先，也不得暗示某一规则更可能适用；"
             "只有原文明确规定优先级或适用范围才能引用该依据作判断。"
+            "引用必须从 read_passage 的 text 中逐字复制连续原文，保留标点空格，不得改写或拼接；"
+            "doc_id 和 chunk_id 必须使用字符串，原样复制。若出现 citation_validation，请修正引用后重新结束。"
+            "出现 budget_notice 后不可调用工具，必须基于已有证据结束或说明资料不足。"
             "不要用假设内容作为证据，不得编造引用；资料不足或工具失败时明确说明。"
         )
         payload = json.dumps({"question": question, "history": history, "trace": trace}, ensure_ascii=False)
-        response = self.client.invoke([("system", prompt), ("human", payload)])
-        return json.loads(response.content)
+        return [("system", prompt), ("human", payload)]

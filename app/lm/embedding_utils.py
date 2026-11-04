@@ -1,10 +1,28 @@
+from functools import wraps
+from threading import RLock
+from typing import Callable, ParamSpec, TypeVar
+
 from pymilvus.model.hybrid import BGEM3EmbeddingFunction
 from app.core.logger import logger
 from app.conf.embedding_config import embedding_config
 
 # 模型单例对象，避免重复初始化
 _bge_m3_ef = None
+_embedding_lock = RLock()
+_Params = ParamSpec("_Params")
+_Result = TypeVar("_Result")
 
+
+def _synchronized(function: Callable[_Params, _Result]) -> Callable[_Params, _Result]:
+    """串行使用共享模型，避免并发初始化和推理争用。"""
+    @wraps(function)
+    def locked(*args: _Params.args, **kwargs: _Params.kwargs) -> _Result:
+        """持锁执行共享模型操作并返回结果。"""
+        with _embedding_lock:
+            return function(*args, **kwargs)
+    return locked
+
+@_synchronized
 def get_bge_m3_ef():
     """
     获取BGE-M3模型单例对象，自动加载环境变量配置
@@ -48,6 +66,7 @@ def get_bge_m3_ef():
         raise  # 向上抛出异常，由调用方处理
 
 
+@_synchronized
 def generate_embeddings(texts):
     """
     为文本列表生成稠密+稀疏混合向量嵌入（模型原生L2归一化）
