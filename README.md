@@ -2,6 +2,59 @@
 
 通过两个工具检索和读取合成制度，输出答案、文档 ID、版本日期、原文引用、资料缺口和执行轨迹。模型看到工具结果后可选择继续检索、读取、追问或结束。原有导入及产品问答功能保留。
 
+## 环境准备
+
+### 离线 Mock 快速体验
+
+安装 [Python 3.11 或以上版本](https://www.python.org/downloads/)和 [uv](https://docs.astral.sh/uv/getting-started/installation/)，在仓库根目录执行：
+
+```powershell
+uv sync
+uv run python -m app.knowledge.cli "报销期限多久？"
+```
+
+首次安装依赖需要联网，可能需要下载体积较大的 PyTorch 等依赖。安装完成后，此命令使用仓库中的合成资料和确定性 Mock，不需要数据库、模型 API、BGE 权重或 MinerU；它只验证流程，不证明真实模型的决策能力。`uv sync` 只安装 Python 项目依赖，不负责启动数据库、启动模型服务或准备全部模型权重。
+
+### 完整网页和真实模型
+
+1. 安装并启动 Docker Desktop（Windows 建议使用 WSL 2 后端），按 [Milvus 2.6 官方部署指南](https://blog.milvus.io/docs/v2.6.x/install_standalone-docker-compose.md)启动 Milvus Standalone。例如在独立于仓库的空目录下载官方 Compose 文件，运行 `docker compose up -d`，再通过 `docker compose ps` 检查状态；不要覆盖已有实例的数据或配置。该部署还会启动 Milvus 所需的 etcd 和 MinIO。另启动 MongoDB：测试环境确认端口和容器名未占用后，可执行 `docker run -d --name knowledge-mongo -p 27017:27017 mongo:7`。数据库不必与应用运行在同一台机器，示例 MongoDB 无认证，仅供本机测试。
+2. 准备 BGE-M3 和 BGE Reranker 的模型文件，例如从 [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) 与 [BAAI/bge-reranker-large](https://huggingface.co/BAAI/bge-reranker-large) 下载完整模型到本机目录。安装项目依赖后，可在仓库根目录运行下面的示例；自行将 `D:/models` 替换为可写目录：
+
+   ```powershell
+   uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('BAAI/bge-m3', local_dir='D:/models/bge-m3')"
+   uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('BAAI/bge-reranker-large', local_dir='D:/models/bge-reranker-large')"
+   ```
+
+   首次下载需要联网和足够磁盘空间。未设置 `BGE_M3_PATH` 时程序会尝试加载 `BAAI/bge-m3`，可能触发下载；重排模型不可用时会回退到 RRF 排序。CPU 可运行，但导入和查询速度取决于硬件。
+3. 准备支持 OpenAI 兼容接口及 JSON 输出的模型服务，可使用本地服务或远程服务；真实模型及 HyDE 召回需要可访问的服务。`uv sync` 不会启动该服务。
+4. 将 `.env.example` 复制为项目根目录的 `.env`（已有 `.env` 时不要覆盖）：
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   编辑 `.env`，将以下环境变量修改为**自己的实际地址、模型路径和密钥**。示例地址仅适用于服务运行在本机且使用相应端口时；模型目录需替换成本机已下载的目录。
+
+   ```dotenv
+   OPENAI_BASE_URL=http://127.0.0.1:8000/v1
+   OPENAI_API_KEY=填写服务所需的密钥
+   LLM_DEFAULT_MODEL=填写服务提供的模型名
+   LLM_DEFAULT_TEMPERATURE=0.1
+   MILVUS_URL=http://127.0.0.1:19530
+   CHUNKS_COLLECTION=knowledge_chunks
+   MONGO_URL=mongodb://127.0.0.1:27017/
+   MONGO_DB_NAME=knowledge_agent
+   BGE_M3_PATH=D:/models/bge-m3
+   BGE_DEVICE=cpu
+   BGE_FP16=false
+   BGE_RERANKER_LARGE=D:/models/bge-reranker-large
+   BGE_RERANKER_DEVICE=cpu
+   BGE_RERANKER_FP16=false
+   ```
+
+   模型服务是否需要密钥取决于服务提供方。`.env` 已被 Git 忽略，不要将真实密钥写进 `.env.example` 或提交到仓库。若系统中已设置同名环境变量，应同时检查其值，避免与 `.env` 配置不一致；修改后重启应用。
+5. 仅在导入 PDF 时需要本地 MinerU。项目使用 `mineru -p <PDF> -o <输出目录> -b pipeline`，并强制 `MINERU_MODEL_SOURCE=local`，因此必须预先按所安装 MinerU 版本的文档准备 pipeline 模型文件；`MODELSCOPE_OFFLINE=1` 不会代替模型下载。将兼容该命令及输出目录结构的 `mineru` 加入 PATH，或在 `.env` 中设置 `MINERU_EXECUTABLE` 为可执行文件完整路径。可运行 `mineru --help` 检查参数，并用一份合成 PDF 验证；MinerU 版本变更可能导致命令或输出结构不兼容，参见 [MinerU 官方文档](https://opendatalab.github.io/MinerU/)和[版本迁移说明](https://opendatalab.github.io/MinerU/reference/migration_4/)。Markdown/TXT 导入不需要 MinerU。
+
 ## 运行
 
 在项目根目录，Python 3.11+：
